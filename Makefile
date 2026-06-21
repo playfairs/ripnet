@@ -11,7 +11,7 @@ OBJDIR = obj
 BUILDDIR = bin
 INCLUDEDIR = include
 
-SOURCES = $(wildcard $(SRCDIR)/*.c)
+SOURCES = $(SRCDIR)/cli.c $(SRCDIR)/main.c $(SRCDIR)/packet.c $(SRCDIR)/stats.c $(SRCDIR)/stress.c $(SRCDIR)/util.c $(SRCDIR)/process.c
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 TARGET = $(BUILDDIR)/ripnet
 

@@ -2,6 +2,7 @@
 #include "ripnet/stats.h"
 #include "ripnet/packet.h"
 #include "ripnet/stress.h"
+#include "ripnet/process.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
