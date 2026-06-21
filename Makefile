@@ -8,11 +8,12 @@ LDFLAGS = -lpcap -lpthread
 
 SRCDIR = src
 OBJDIR = obj
+BUILDDIR = bin
 INCLUDEDIR = include
 
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-TARGET = ripnet
+TARGET = $(BUILDDIR)/ripnet
 
 VERSION := $(shell cat VERSION)
 
@@ -23,21 +24,24 @@ all: $(TARGET)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-$(TARGET): $(OBJECTS) | $(OBJDIR)
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+$(TARGET): $(OBJECTS) | $(OBJDIR) $(BUILDDIR)
 	$(CC) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(BUILDDIR)
 
 install: $(TARGET)
 	install -d $(BINDIR)
-	install -m 755 $(TARGET) $(BINDIR)/$(TARGET)
+	install -m 755 $(TARGET) $(BINDIR)/ripnet
 
 uninstall:
-	rm -f $(BINDIR)/$(TARGET)
+	rm -f $(BINDIR)/ripnet
 
 test: $(TARGET)
 	@echo "Running tests..."
