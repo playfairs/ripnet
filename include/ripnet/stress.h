@@ -37,5 +37,6 @@ int calculate_percentiles(double *latencies, int count, double *p50, double *p95
 int packet_flood(const char *iface, const char *target_ip, int port, int duration_sec, uint64_t packets_per_sec);
 int scan_ports(const char *target_ip, int start_port, int end_port, int timeout_ms);
 int detect_vulnerabilities(const char *target_ip, int port);
+int scan_network_processes(const char *process_filter, int pid_filter);
 
 #endif

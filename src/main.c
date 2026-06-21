@@ -119,6 +119,12 @@ int main(int argc, char **argv)
             }
             break;
 
+        case CMD_SCAN_PROCESSES:
+            if (scan_network_processes(args.process_filter, args.pid_filter) < 0) {
+                return 1;
+            }
+            break;
+
         default:
             fprintf(stderr, "Unknown command\n");
             return 1;

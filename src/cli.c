@@ -28,10 +28,13 @@ static struct option long_options[] = {
     {"end-port", required_argument, 0, 'e'},
     {"timeout", required_argument, 0, 'T'},
     {"vuln-scan", required_argument, 0, 'V'},
+    {"scan-processes", no_argument, 0, 'N'},
+    {"process", required_argument, 0, 'X'},
+    {"pid", required_argument, 0, 'I'},
     {"json", no_argument, 0, 'j'},
     {"verbose", no_argument, 0, 'v'},
     {"help", no_argument, 0, '?'},
-    {"version", no_argument, 0, 'V'},
+    {"version", no_argument, 0, 'v'},
     {0, 0, 0, 0}
 };
 
@@ -62,6 +65,10 @@ void print_help(void)
     printf("  -e, --end-port PORT           End port for scan\n");
     printf("  -T, --timeout MS               Connection timeout\n");
     printf("  -V, --vuln-scan HOST:PORT      Vulnerability scan\n\n");
+    printf("Process Scanning:\n");
+    printf("  -N, --scan-processes           Scan network processes\n");
+    printf("  -X, --process NAME             Filter by process name\n");
+    printf("  -I, --pid PID                  Filter by PID\n\n");
     printf("Output:\n");
     printf("  -j, --json                     Output in JSON format\n");
     printf("  -v, --verbose                  Verbose output\n");
@@ -72,6 +79,8 @@ void print_help(void)
     printf("  ripnet --capture eth0 --filter \"tcp port 80\"\n");
     printf("  ripnet --tcp-stress example.com --port 80 --concurrency 10 --duration 30\n");
     printf("  ripnet --port-scan 192.168.1.1 --start-port 1 --end-port 1000\n");
+    printf("  ripnet --scan-processes\n");
+    printf("  ripnet --scan-processes --process steam\n");
 }
 
 void print_version(void)
@@ -94,8 +103,9 @@ int parse_args(int argc, char **argv, cli_args_t *args)
     args->end_port = 1024;
     args->timeout = 1000;
     args->promisc = 0;
+    args->pid_filter = 0;
 
-    while ((opt = getopt_long(argc, argv, "ls:c:f:n:pt:h:P:C:D:R:H:F:S:a:e:T:V:jv?", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "ls:c:f:n:pt:h:P:C:D:R:H:F:S:a:e:T:V:NX:I:jv?", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'l':
                 args->cmd = CMD_LIST_INTERFACES;
@@ -190,6 +200,18 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 } else {
                     print_version();
                     exit(0);
+                }
+                break;
+            case 'N':
+                args->cmd = CMD_SCAN_PROCESSES;
+                break;
+            case 'X':
+                strncpy(args->process_filter, optarg, 255);
+                break;
+            case 'I':
+                if (parse_uint(optarg, (unsigned int *)&args->pid_filter) < 0) {
+                    fprintf(stderr, "Invalid PID: %s\n", optarg);
+                    return -1;
                 }
                 break;
             case 'j':

@@ -10,7 +10,8 @@ typedef enum {
     CMD_HTTP_STRESS,
     CMD_PACKET_FLOOD,
     CMD_PORT_SCAN,
-    CMD_VULN_SCAN
+    CMD_VULN_SCAN,
+    CMD_SCAN_PROCESSES
 } command_t;
 
 typedef struct {
@@ -30,6 +31,8 @@ typedef struct {
     int timeout;
     int json_output;
     int verbose;
+    char process_filter[256];
+    int pid_filter;
 } cli_args_t;
 
 int parse_args(int argc, char **argv, cli_args_t *args);

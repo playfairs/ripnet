@@ -15,6 +15,19 @@
 #include <netdb.h>
 #include <inttypes.h>
 
+#if defined(__linux__)
+#include <netinet/tcp.h>
+#endif
+
+#define COLOR_RESET "\033[0m"
+#define COLOR_RED "\033[31m"
+#define COLOR_GREEN "\033[32m"
+#define COLOR_YELLOW "\033[33m"
+#define COLOR_BLUE "\033[34m"
+#define COLOR_MAGENTA "\033[35m"
+#define COLOR_CYAN "\033[36m"
+#define COLOR_BOLD "\033[1m"
+
 typedef struct {
     int sockfd;
     struct sockaddr_in addr;
@@ -66,6 +79,7 @@ static void *tcp_worker(void *arg)
     thread_context_t *ctx = (thread_context_t *)arg;
     worker_context_t wctx;
     struct timespec start, end;
+    int opt = 1;
 
     while (!*ctx->should_stop) {
         wctx.sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -74,6 +88,11 @@ static void *tcp_worker(void *arg)
             ctx->result->total_connections++;
             continue;
         }
+
+        setsockopt(wctx.sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#if defined(__linux__)
+        setsockopt(wctx.sockfd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+#endif
 
         clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -100,12 +119,12 @@ static void *tcp_worker(void *arg)
         char full_request[512];
         int request_len = snprintf(full_request, sizeof(full_request), "%s%s%s", request, ctx->config->host, request_end);
 
-        ssize_t sent = send(wctx.sockfd, full_request, request_len, 0);
+        ssize_t sent = send(wctx.sockfd, full_request, request_len, MSG_NOSIGNAL);
         if (sent > 0) {
             wctx.bytes_sent = sent;
             ctx->result->total_bytes_sent += sent;
 
-            char response[4096];
+            char response[8192];
             ssize_t received = recv(wctx.sockfd, response, sizeof(response), 0);
             if (received > 0) {
                 wctx.bytes_received = received;
@@ -131,10 +150,6 @@ static void *tcp_worker(void *arg)
         }
 
         close(wctx.sockfd);
-
-        if (ctx->config->rate_limit > 0) {
-            usleep(1000000 / ctx->config->rate_limit);
-        }
     }
 
     return NULL;
@@ -181,13 +196,20 @@ int run_tcp_stress(const stress_config_t *config, stress_result_t *result)
         pthread_create(&threads[i], NULL, tcp_worker, &ctx);
     }
 
-    printf("Running TCP stress test for %d seconds with %d concurrent connections\n", config->duration_sec, config->concurrency);
-    printf("Target: %s:%d\n", config->host, config->port);
+    printf(COLOR_BOLD COLOR_CYAN "TCP STRESS TEST\n");
+    printf(COLOR_RESET "  Target: " COLOR_BOLD COLOR_GREEN "%s:%d\n", config->host, config->port);
+    printf(COLOR_RESET "  Duration: " COLOR_BOLD COLOR_YELLOW "%d seconds\n", config->duration_sec);
+    printf(COLOR_RESET "  Concurrency: " COLOR_BOLD COLOR_MAGENTA "%d workers\n", config->concurrency);
     printf("\n");
 
     for (int elapsed = 0; elapsed < config->duration_sec; elapsed++) {
-        printf("\rProgress: %d/%d seconds | Connections: %" PRIu64 " | Success: %" PRIu64 " | Failed: %" PRIu64,
-               elapsed + 1, config->duration_sec, result->total_connections, result->successful_connections, result->failed_connections);
+        double conn_rate = (double)result->total_connections / (elapsed + 1);
+        double success_rate = result->total_connections > 0 ? (double)result->successful_connections / result->total_connections * 100.0 : 0.0;
+        char rate_buf[32];
+        format_rate(result->total_bytes_sent * 8 / (elapsed + 1), rate_buf, sizeof(rate_buf));
+
+        printf(COLOR_BOLD "\r[" COLOR_CYAN "%02d/%02d" COLOR_RESET "] " COLOR_GREEN "Conn: %" PRIu64 COLOR_RESET " | " COLOR_YELLOW "Success: %" PRIu64 COLOR_RESET " (%.1f%%) | " COLOR_RED "Failed: %" PRIu64 COLOR_RESET " | " COLOR_MAGENTA "Rate: %.1f/s" COLOR_RESET " | " COLOR_BLUE "BW: %s" COLOR_RESET,
+               elapsed + 1, config->duration_sec, result->total_connections, result->successful_connections, success_rate, result->failed_connections, conn_rate, rate_buf);
         fflush(stdout);
         sleep(1);
     }
@@ -230,22 +252,30 @@ int run_http_stress(const stress_config_t *config, stress_result_t *result)
 
 void print_stress_results(const stress_result_t *result)
 {
-    printf("\nStress Test Results:\n");
-    printf("  Duration: %.2f seconds\n", result->duration_sec);
-    printf("  Total connections: %" PRIu64 "\n", result->total_connections);
-    printf("  Successful: %" PRIu64 "\n", result->successful_connections);
-    printf("  Failed: %" PRIu64 "\n", result->failed_connections);
-    printf("  Success rate: %.2f%%\n", result->total_connections > 0 ? (double)result->successful_connections / result->total_connections * 100.0 : 0.0);
-    printf("  Bytes sent: %" PRIu64 "\n", result->total_bytes_sent);
-    printf("  Bytes received: %" PRIu64 "\n", result->total_bytes_received);
-    printf("  Latency (ms):\n");
-    printf("    Min: %.2f\n", result->min_latency_ms);
-    printf("    Max: %.2f\n", result->max_latency_ms);
-    printf("    Avg: %.2f\n", result->avg_latency_ms);
-    printf("    P50: %.2f\n", result->p50_latency_ms);
-    printf("    P95: %.2f\n", result->p95_latency_ms);
-    printf("    P99: %.2f\n", result->p99_latency_ms);
-    printf("  Throughput: %.2f Mbps\n", result->throughput_mbps);
+    char sent_buf[32], recv_buf[32];
+    format_bytes(result->total_bytes_sent, sent_buf, sizeof(sent_buf));
+    format_bytes(result->total_bytes_received, recv_buf, sizeof(recv_buf));
+
+    double success_rate = result->total_connections > 0 ? (double)result->successful_connections / result->total_connections * 100.0 : 0.0;
+    double conn_rate = result->total_connections / result->duration_sec;
+
+    printf(COLOR_BOLD COLOR_CYAN "\nSTRESS TEST RESULTS\n");
+    printf(COLOR_RESET "  Duration:        " COLOR_BOLD COLOR_YELLOW "%.2f seconds\n", result->duration_sec);
+    printf(COLOR_RESET "  Total Conn:      " COLOR_BOLD COLOR_GREEN "%" PRIu64 "\n", result->total_connections);
+    printf(COLOR_RESET "  Successful:      " COLOR_BOLD COLOR_GREEN "%" PRIu64 COLOR_RESET " (%.2f%%)\n", result->successful_connections, success_rate);
+    printf(COLOR_RESET "  Failed:          " COLOR_BOLD COLOR_RED "%" PRIu64 "\n", result->failed_connections);
+    printf(COLOR_RESET "  Conn Rate:       " COLOR_BOLD COLOR_MAGENTA "%.1f conn/s\n", conn_rate);
+    printf(COLOR_RESET "  Bytes Sent:      " COLOR_BOLD COLOR_BLUE "%s\n", sent_buf);
+    printf(COLOR_RESET "  Bytes Received:  " COLOR_BOLD COLOR_BLUE "%s\n", recv_buf);
+    printf(COLOR_RESET "  Throughput:      " COLOR_BOLD COLOR_BLUE "%.2f Mbps\n", result->throughput_mbps);
+    printf(COLOR_RESET "  Latency (ms):\n");
+    printf(COLOR_RESET "    Min:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->min_latency_ms);
+    printf(COLOR_RESET "    Max:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->max_latency_ms);
+    printf(COLOR_RESET "    Avg:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->avg_latency_ms);
+    printf(COLOR_RESET "    P50:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->p50_latency_ms);
+    printf(COLOR_RESET "    P95:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->p95_latency_ms);
+    printf(COLOR_RESET "    P99:           " COLOR_BOLD COLOR_YELLOW "%.2f\n", result->p99_latency_ms);
+    printf(COLOR_RESET "\n");
 }
 
 void print_stress_json(const stress_result_t *result)
@@ -333,4 +363,183 @@ int detect_vulnerabilities(const char *target_ip, int port)
     (void)port;
     fprintf(stderr, "Vulnerability scanning requires explicit authorization and configuration\n");
     return -1;
+}
+
+int scan_network_processes(const char *process_filter, int pid_filter)
+{
+    char command[1024];
+    FILE *fp;
+    char line[1024];
+    int found = 0;
+    int tcp_count = 0;
+    int udp_count = 0;
+    int listen_count = 0;
+    int established_count = 0;
+
+    printf(COLOR_BOLD COLOR_CYAN "NETWORK PROCESS SCANNER\n" COLOR_RESET);
+    printf("\n");
+
+    if (pid_filter > 0) {
+        printf(COLOR_RESET "Filtering by PID: " COLOR_BOLD COLOR_GREEN "%d\n", pid_filter);
+    }
+    if (strlen(process_filter) > 0) {
+        printf(COLOR_RESET "Filtering by Process: " COLOR_BOLD COLOR_GREEN "%s\n", process_filter);
+    }
+    printf("\n");
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+    snprintf(command, sizeof(command), "lsof -i -P -n 2>/dev/null");
+#elif defined(__linux__)
+    snprintf(command, sizeof(command), "ss -tunp 2>/dev/null");
+#else
+    fprintf(stderr, "Process scanning not supported on this platform\n");
+    return -1;
+#endif
+
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Failed to execute network process scanner\n");
+        return -1;
+    }
+
+    typedef struct {
+        char pid[32];
+        char name[256];
+        char proto[32];
+        char local[256];
+        char remote[256];
+        char state[64];
+    } conn_info_t;
+
+    conn_info_t connections[1024];
+    int conn_count = 0;
+
+    while (fgets(line, sizeof(line), fp) != NULL && conn_count < 1024) {
+        conn_info_t *conn = &connections[conn_count];
+        memset(conn, 0, sizeof(conn_info_t));
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+        if (strstr(line, "COMMAND") != NULL || strstr(line, "NAME") != NULL) {
+            continue;
+        }
+
+        char *token = strtok(line, " \t");
+        if (token == NULL) continue;
+
+        strncpy(conn->name, token, sizeof(conn->name) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token == NULL) continue;
+        strncpy(conn->pid, token, sizeof(conn->pid) - 1);
+
+        for (int i = 0; i < 5; i++) {
+            token = strtok(NULL, " \t");
+            if (token == NULL) break;
+        }
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->proto, token, sizeof(conn->proto) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->local, token, sizeof(conn->local) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->remote, token, sizeof(conn->remote) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->state, token, sizeof(conn->state) - 1);
+
+#elif defined(__linux__)
+        if (strstr(line, "Netid") != NULL || strstr(line, "State") != NULL) {
+            continue;
+        }
+
+        char *token = strtok(line, " \t");
+        if (token == NULL) continue;
+        strncpy(conn->proto, token, sizeof(conn->proto) - 1);
+
+        for (int i = 0; i < 4; i++) {
+            token = strtok(NULL, " \t");
+            if (token == NULL) break;
+        }
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->local, token, sizeof(conn->local) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->remote, token, sizeof(conn->remote) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->state, token, sizeof(conn->state) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->pid, token, sizeof(conn->pid) - 1);
+
+        token = strtok(NULL, " \t");
+        if (token != NULL) strncpy(conn->name, token, sizeof(conn->name) - 1);
+#endif
+
+        int match = 1;
+        if (pid_filter > 0 && atoi(conn->pid) != pid_filter) {
+            match = 0;
+        }
+        if (strlen(process_filter) > 0 && strstr(conn->name, process_filter) == NULL) {
+            match = 0;
+        }
+
+        if (match && strlen(conn->pid) > 0) {
+            conn_count++;
+            found++;
+        }
+    }
+
+    pclose(fp);
+
+    if (found == 0) {
+        printf(COLOR_YELLOW "No matching network processes found\n" COLOR_RESET);
+        return 0;
+    }
+
+    for (int i = 0; i < conn_count; i++) {
+        if (strcmp(connections[i].proto, "TCP") == 0) tcp_count++;
+        if (strcmp(connections[i].proto, "UDP") == 0) udp_count++;
+        if (strstr(connections[i].state, "LISTEN") != NULL) listen_count++;
+        if (strstr(connections[i].state, "ESTABLISHED") != NULL) established_count++;
+    }
+
+    printf(COLOR_BOLD COLOR_CYAN "┌─ " COLOR_GREEN "%s" COLOR_RESET COLOR_CYAN " (PID: " COLOR_YELLOW "%s" COLOR_RESET COLOR_CYAN ")\n", connections[0].name, connections[0].pid);
+    printf("│\n");
+    printf("├─ " COLOR_BOLD "Statistics\n" COLOR_RESET);
+    printf("│   Total Connections: " COLOR_GREEN "%d\n" COLOR_RESET, conn_count);
+    printf("│   TCP: " COLOR_GREEN "%d" COLOR_RESET " | UDP: " COLOR_GREEN "%d\n" COLOR_RESET, tcp_count, udp_count);
+    printf("│   Listening: " COLOR_GREEN "%d" COLOR_RESET " | Established: " COLOR_GREEN "%d\n" COLOR_RESET, listen_count, established_count);
+    printf("│\n");
+    printf("├─ " COLOR_BOLD "Network Graph\n" COLOR_RESET);
+
+    for (int i = 0; i < conn_count; i++) {
+        conn_info_t *conn = &connections[i];
+        char *color = strcmp(conn->proto, "TCP") == 0 ? COLOR_BLUE : COLOR_MAGENTA;
+        
+        if (i == conn_count - 1) {
+            printf("└── ");
+        } else {
+            printf("├── ");
+        }
+
+        printf("%s%s" COLOR_RESET " %s", color, conn->proto, conn->local);
+        
+        if (strlen(conn->remote) > 0 && strcmp(conn->remote, "*:*") != 0) {
+            printf(" → %s", conn->remote);
+        }
+        
+        if (strlen(conn->state) > 0) {
+            printf(" [%s]", conn->state);
+        }
+        
+        printf("\n");
+    }
+
+    printf("\n" COLOR_BOLD "Total: " COLOR_GREEN "%d connections\n" COLOR_RESET, conn_count);
+
+    return 0;
 }
