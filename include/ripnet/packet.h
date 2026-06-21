@@ -6,13 +6,28 @@
 #define _DEFAULT_SOURCE 1
 #define __FAVOR_BSD 1
 #define _GNU_SOURCE 1
-#define u_int unsigned int
-#define u_short unsigned short
-#define u_char unsigned char
-#define u_int32_t unsigned int
-#define u_int16_t unsigned short
-#define u_int8_t unsigned char
-#define bpf_u_int32 unsigned int
+#include <sys/types.h>
+#ifndef u_int
+typedef unsigned int u_int;
+#endif
+#ifndef u_short
+typedef unsigned short u_short;
+#endif
+#ifndef u_char
+typedef unsigned char u_char;
+#endif
+#ifndef u_int32_t
+typedef unsigned int u_int32_t;
+#endif
+#ifndef u_int16_t
+typedef unsigned short u_int16_t;
+#endif
+#ifndef u_int8_t
+typedef unsigned char u_int8_t;
+#endif
+#ifndef bpf_u_int32
+typedef unsigned int bpf_u_int32;
+#endif
 #endif
 
 #include <pcap.h>
