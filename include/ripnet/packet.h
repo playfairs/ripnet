@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <pcap.h>
 
+#if defined(__linux__)
+#include <sys/types.h>
+#endif
+
 typedef struct {
     uint64_t total;
     uint64_t ethernet;
