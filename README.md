@@ -1,4 +1,4 @@
-# ripnet ![](https://rv.playfairs.cc/playfairs/ripnet)
+# ripnet ![](https://rv.playfairs.cc/ripnetwork/ripnet)
 
 Network diagnostics, packet analysis, observability, and authorized load-testing toolkit.
 
