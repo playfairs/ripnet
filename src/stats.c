@@ -36,9 +36,15 @@ int list_interfaces(interface_stats_t **stats, int *count)
             continue;
         }
 
+#if defined(__APPLE__) || defined(__FreeBSD__)
         if (ifa->ifa_addr->sa_family != AF_LINK) {
             continue;
         }
+#elif defined(__linux__)
+        if (ifa->ifa_addr->sa_family != AF_PACKET) {
+            continue;
+        }
+#endif
 
         int found = 0;
         for (int i = 0; i < num_interfaces; i++) {
