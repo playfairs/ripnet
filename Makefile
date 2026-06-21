@@ -3,7 +3,7 @@ BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -std=c17 -Iinclude
+CFLAGS = -Wall -Wextra -Wpedantic -std=c17 -Iinclude -D_BSD_SOURCE -D_DEFAULT_SOURCE -D__FAVOR_BSD -D_GNU_SOURCE
 LDFLAGS = -lpcap -lpthread
 
 SRCDIR = src

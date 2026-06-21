@@ -1,12 +1,22 @@
 #ifndef RIPNET_PACKET_H
 #define RIPNET_PACKET_H
 
-#include <stdint.h>
-#include <pcap.h>
-
 #if defined(__linux__)
-#include <sys/types.h>
+#define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
+#define __FAVOR_BSD 1
+#define _GNU_SOURCE 1
+#define u_int unsigned int
+#define u_short unsigned short
+#define u_char unsigned char
+#define u_int32_t unsigned int
+#define u_int16_t unsigned short
+#define u_int8_t unsigned char
+#define bpf_u_int32 unsigned int
 #endif
+
+#include <pcap.h>
+#include <stdint.h>
 
 typedef struct {
     uint64_t total;
