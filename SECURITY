@@ -1,0 +1,20 @@
+            Security Policy
+
+Authorized Use
+    ripnet is designed for testing systems owned by the operator or systems for which the operator has explicit authorization.
+
+Prohibited Use
+    - Do not use against third-party systems without authorization
+    - Do not use for malicious purposes
+    - Do not use for unauthorized access or disruption
+
+Vulnerability Reporting
+    Report security issues via responsible disclosure.
+
+Design Principles
+    - No attack tooling
+    - No reflection/amplification techniques
+    - No spoofing
+    - No evasion techniques
+    - No botnet functionality
+    - No distributed attack functionality
