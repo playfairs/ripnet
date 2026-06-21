@@ -11,7 +11,7 @@ OBJDIR = obj
 BUILDDIR = bin
 INCLUDEDIR = include
 
-SOURCES = $(SRCDIR)/cli.c $(SRCDIR)/main.c $(SRCDIR)/packet.c $(SRCDIR)/stats.c $(SRCDIR)/stress.c $(SRCDIR)/util.c $(SRCDIR)/process.c
+SOURCES = $(SRCDIR)/cli.c $(SRCDIR)/main.c $(SRCDIR)/packet.c $(SRCDIR)/stats.c $(SRCDIR)/stress.c $(SRCDIR)/util.c $(SRCDIR)/process.c $(SRCDIR)/dns.c $(SRCDIR)/traceroute.c $(SRCDIR)/ping.c $(SRCDIR)/scan.c $(SRCDIR)/netstat.c $(SRCDIR)/arp.c $(SRCDIR)/route.c $(SRCDIR)/firewall.c $(SRCDIR)/bandwidth.c $(SRCDIR)/monitor.c $(SRCDIR)/discovery.c $(SRCDIR)/security.c
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 TARGET = $(BUILDDIR)/ripnet
 
