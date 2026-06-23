@@ -15,7 +15,7 @@ typedef struct {
 } vulnerability_t;
 
 typedef struct {
-    vulnerability_t vulnerabilities[1024];
+    vulnerability_t vulnerabilities[256];
     int vulnerability_count;
     char target[256];
     int scan_time_sec;

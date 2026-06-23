@@ -10,8 +10,8 @@
 #include <inttypes.h>
 
 static pcap_t *handle = NULL;
-static packet_counters_t counters;
-static flow_table_t flow_table;
+static packet_counters_t *counters = NULL;
+static flow_table_t *flow_table = NULL;
 static int packet_limit = 0;
 static volatile sig_atomic_t should_stop = 0;
 
@@ -21,22 +21,24 @@ void sigint_handler(int signum)
     should_stop = 1;
 }
 
-void init_packet_counters(packet_counters_t *counters)
+void init_packet_counters(packet_counters_t *c)
 {
-    memset(counters, 0, sizeof(packet_counters_t));
+    memset(c, 0, sizeof(packet_counters_t));
 }
 
 void init_flow_table(flow_table_t *table)
 {
-    table->capacity = 1024;
+    table->capacity = 256;
     table->entries = xcalloc(table->capacity, sizeof(flow_entry_t));
     table->count = 0;
 }
 
 void free_flow_table(flow_table_t *table)
 {
-    free(table->entries);
-    table->entries = NULL;
+    if (table->entries) {
+        free(table->entries);
+        table->entries = NULL;
+    }
     table->count = 0;
     table->capacity = 0;
 }
@@ -119,14 +121,14 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
     (void)args;
     (void)header;
 
-    counters.total++;
+    counters->total++;
 
     uint32_t ethertype;
     if (parse_ethernet(packet, &ethertype) == 0) {
-        counters.ethernet++;
+        counters->ethernet++;
 
         if (ethertype == 0x0800) {
-            counters.ipv4++;
+            counters->ipv4++;
 
             uint32_t src_ip, dst_ip;
             uint8_t protocol;
@@ -136,29 +138,29 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
                 const u_char *payload = packet + 14 + payload_offset;
 
                 if (protocol == 6) {
-                    counters.tcp++;
+                    counters->tcp++;
 
                     uint16_t src_port, dst_port;
                     if (parse_tcp(payload, &src_port, &dst_port) == 0) {
-                        flow_entry_t *flow = find_or_create_flow(&flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
+                        flow_entry_t *flow = find_or_create_flow(flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
                         flow->packet_count++;
                         flow->byte_count += header->len;
                     }
                 } else if (protocol == 17) {
-                    counters.udp++;
+                    counters->udp++;
 
                     uint16_t src_port, dst_port;
                     if (parse_udp(payload, &src_port, &dst_port) == 0) {
-                        flow_entry_t *flow = find_or_create_flow(&flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
+                        flow_entry_t *flow = find_or_create_flow(flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
                         flow->packet_count++;
                         flow->byte_count += header->len;
                     }
                 } else if (protocol == 1) {
-                    counters.icmp++;
+                    counters->icmp++;
                 }
             }
         } else if (ethertype == 0x86DD) {
-            counters.ipv6++;
+            counters->ipv6++;
 
             uint8_t src_ip[16], dst_ip[16];
             uint8_t next_header;
@@ -166,21 +168,21 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 
             if (parse_ipv6(packet + 14, src_ip, dst_ip, &next_header, &payload_offset) == 0) {
                 if (next_header == 6) {
-                    counters.tcp++;
+                    counters->tcp++;
                 } else if (next_header == 17) {
-                    counters.udp++;
+                    counters->udp++;
                 } else if (next_header == 58) {
-                    counters.icmp++;
+                    counters->icmp++;
                 }
             }
         } else {
-            counters.other++;
+            counters->other++;
         }
     } else {
-        counters.other++;
+        counters->other++;
     }
 
-    if (packet_limit > 0 && counters.total >= (uint64_t)packet_limit) {
+    if (packet_limit > 0 && counters->total >= (uint64_t)packet_limit) {
         should_stop = 1;
     }
 }
@@ -253,8 +255,18 @@ int start_capture(const char *iface, const char *filter, int count, int promisc)
         pcap_freecode(&fp);
     }
 
-    init_packet_counters(&counters);
-    init_flow_table(&flow_table);
+    counters = malloc(sizeof(packet_counters_t));
+    if (!counters) {
+        fprintf(stderr, "Failed to allocate counters\n");
+        return -1;
+    }
+    init_packet_counters(counters);
+    flow_table = malloc(sizeof(flow_table_t));
+    if (!flow_table) {
+        fprintf(stderr, "Failed to allocate flow table\n");
+        return -1;
+    }
+    init_flow_table(flow_table);
     packet_limit = count;
     should_stop = 0;
 
@@ -275,10 +287,14 @@ int start_capture(const char *iface, const char *filter, int count, int promisc)
     pcap_close(handle);
     handle = NULL;
 
-    print_packet_summary(&counters);
-    print_flows(&flow_table);
+    print_packet_summary(counters);
+    free(counters);
+    counters = NULL;
+    print_flows(flow_table);
 
-    free_flow_table(&flow_table);
+    free_flow_table(flow_table);
+    free(flow_table);
+    flow_table = NULL;
 
     return 0;
 }

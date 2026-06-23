@@ -99,19 +99,41 @@ static struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
+void print_usage(void)
+{
+    printf("ripnet - network diagnostics and analysis toolkit\n\n");
+    printf("Usage:\n");
+    printf("  ripnet [OPTIONS]\n\n");
+    printf("Common commands:\n");
+    printf("  ripnet --list-interfaces\n");
+    printf("  ripnet --show-stats IFACE\n");
+    printf("  ripnet --ping HOST --ping-count N\n");
+    printf("  ripnet --dns-lookup HOST\n");
+    printf("  ripnet --scan HOST --start-port PORT --end-port PORT\n\n");
+    printf("Run 'ripnet --help' for the full manual.\n");
+}
+
 void print_help(void)
 {
-    printf("ripnet - Advanced Network Diagnostics, Security, and Analysis Toolkit\n\n");
-    printf("Usage: ripnet [OPTIONS]\n\n");
-    printf("Interface Discovery:\n");
+    printf("RIPNET(1)                 User Commands                RIPNET(1)\n\n");
+    printf("NAME\n");
+    printf("  ripnet - advanced network diagnostics, security, and analysis toolkit\n\n");
+    printf("SYNOPSIS\n");
+    printf("  ripnet [OPTIONS]\n\n");
+    printf("DESCRIPTION\n");
+    printf("  ripnet provides interface inspection, packet capture, DNS tools,\n");
+    printf("  tracing, ping, scanning, route and firewall helpers, bandwidth\n");
+    printf("  monitoring, discovery, and authorized security checks from one CLI.\n\n");
+    printf("OPTIONS\n");
+    printf("  Interface Discovery:\n");
     printf("  -l, --list-interfaces          List all network interfaces\n");
     printf("  -s, --show-stats IFACE         Show statistics for interface\n\n");
-    printf("Packet Capture:\n");
+    printf("  Packet Capture:\n");
     printf("  -c, --capture IFACE            Start packet capture on interface\n");
     printf("  -f, --filter FILTER            BPF filter expression\n");
     printf("  -n, --count N                  Capture N packets then exit\n");
     printf("  -p, --promisc                  Enable promiscuous mode\n\n");
-    printf("Load Testing:\n");
+    printf("  Load Testing:\n");
     printf("  -t, --tcp-stress HOST          Run TCP stress test\n");
     printf("  -h, --http-stress HOST         Run HTTP stress test\n");
     printf("  -P, --port PORT                Target port\n");
@@ -119,43 +141,43 @@ void print_help(void)
     printf("  -D, --duration SECONDS         Test duration\n");
     printf("  -R, --rate-limit N             Rate limit (connections/sec)\n");
     printf("  -H, --http-path PATH           HTTP path for stress test\n\n");
-    printf("DNS Tools:\n");
+    printf("  DNS Tools:\n");
     printf("  -d, --dns-lookup HOST          DNS lookup\n");
     printf("  -r, --dns-reverse IP           Reverse DNS lookup\n");
     printf("  -q, --dns-query HOST TYPE     DNS query (A, AAAA, MX, etc.)\n");
     printf("  -Z, --dns-server SERVER        DNS server for queries\n");
     printf("  -Y, --dns-trace HOST           DNS trace\n");
     printf("  -Q, --dns-cache-flush          Flush DNS cache\n\n");
-    printf("Network Tracing:\n");
+    printf("  Network Tracing:\n");
     printf("  -g, --traceroute HOST          Traceroute to host\n");
     printf("  -G, --traceroute-tcp HOST     TCP traceroute\n");
     printf("  -U, --traceroute-udp HOST     UDP traceroute\n\n");
-    printf("Ping Tools:\n");
+    printf("  Ping Tools:\n");
     printf("  -i, --ping HOST                Ping host\n");
     printf("  -J, --ping-tcp HOST:PORT       TCP ping\n");
     printf("  -K, --ping-count N             Number of pings\n\n");
-    printf("Scanning:\n");
+    printf("  Scanning:\n");
     printf("  -M, --scan HOST                Port scan\n");
     printf("  -O, --service-scan HOST:PORT   Service scan\n");
     printf("  -B, --os-fingerprint HOST       OS fingerprinting\n");
     printf("  -a, --start-port PORT         Start port for scan\n");
     printf("  -e, --end-port PORT           End port for scan\n");
     printf("  -T, --timeout MS               Connection timeout\n\n");
-    printf("Network Statistics:\n");
+    printf("  Network Statistics:\n");
     printf("  -E, --netstat                  Show network connections\n");
     printf("  -L, --netstat-listening        Show listening ports\n");
     printf("  -W, --netstat-route            Show routing table\n\n");
-    printf("ARP Tools:\n");
+    printf("  ARP Tools:\n");
     printf("  -A, --arp-table                Show ARP table\n");
     printf("  -y, --arp-scan NETWORK         ARP scan network\n");
     printf("  -z, --arp-flush IFACE          Flush ARP cache\n\n");
-    printf("Routing:\n");
+    printf("  Routing:\n");
     printf("  -o, --route-table              Show routing table\n");
     printf("  -1, --route-add DEST           Add route\n");
     printf("  -2, --route-delete DEST        Delete route\n");
     printf("  -3, --gateway GATEWAY          Gateway for route\n");
     printf("  -4, --netmask NETMASK          Netmask for route\n\n");
-    printf("Firewall:\n");
+    printf("  Firewall:\n");
     printf("  -5, --firewall-list            List firewall rules\n");
     printf("  -6, --firewall-add RULE        Add firewall rule\n");
     printf("  -7, --firewall-delete RULE     Delete firewall rule\n");
@@ -165,17 +187,17 @@ void print_help(void)
     printf("  --unblock-ip IP                Unblock IP address\n");
     printf("  --block-port PORT PROTO        Block port\n");
     printf("  --unblock-port PORT PROTO      Unblock port\n\n");
-    printf("Bandwidth:\n");
+    printf("  Bandwidth:\n");
     printf("  --bandwidth-test IFACE         Test bandwidth\n");
     printf("  --bandwidth-monitor IFACE      Monitor bandwidth\n\n");
-    printf("Monitoring:\n");
+    printf("  Monitoring:\n");
     printf("  --monitor-start IFACE          Start network monitor\n");
     printf("  --monitor-alert IFACE          Monitor with alerts\n");
     printf("  --threshold MBPS              Alert threshold\n\n");
-    printf("Discovery:\n");
+    printf("  Discovery:\n");
     printf("  --discovery-ping NETWORK       Ping discovery\n");
     printf("  --discovery-arp NETWORK       ARP discovery\n\n");
-    printf("Security:\n");
+    printf("  Security:\n");
     printf("  --security-scan HOST           Security scan\n");
     printf("  --security-audit HOST          Security audit\n");
     printf("  --security-ssl HOST:PORT       SSL security check\n");
@@ -183,16 +205,16 @@ void print_help(void)
     printf("  --security-http HOST:PORT      HTTP security check\n");
     printf("  --security-smtp HOST:PORT      SMTP security check\n");
     printf("  --security-banner HOST:PORT    Banner grab\n\n");
-    printf("Process Scanning:\n");
+    printf("  Process Scanning:\n");
     printf("  -N, --scan-processes           Scan network processes\n");
     printf("  -X, --process NAME             Filter by process name\n");
     printf("  -I, --pid PID                  Filter by PID\n\n");
-    printf("Output:\n");
+    printf("  Output:\n");
     printf("  -j, --json                     Output in JSON format\n");
     printf("  -v, --verbose                  Verbose output\n");
-    printf("  -?, --help                     Show this help message\n");
+    printf("  -?, --help                     Show this manual page\n");
     printf("  -w, --version                  Show version information\n\n");
-    printf("Examples:\n");
+    printf("EXAMPLES\n");
     printf("  ripnet --list-interfaces\n");
     printf("  ripnet --dns-lookup example.com\n");
     printf("  ripnet --traceroute example.com\n");
@@ -202,6 +224,10 @@ void print_help(void)
     printf("  ripnet --firewall-list\n");
     printf("  ripnet --bandwidth-test eth0\n");
     printf("  ripnet --security-ssh example.com:22\n");
+    printf("\nEXIT STATUS\n");
+    printf("  0  Command completed successfully.\n");
+    printf("  1  Command failed, arguments were invalid, or required resources were unavailable.\n\n");
+    printf("RIPNET(1)                 User Commands                RIPNET(1)\n");
 }
 
 void print_version(void)
@@ -229,21 +255,21 @@ int parse_args(int argc, char **argv, cli_args_t *args)
     args->interval = 1;
     args->threshold = 100.0;
 
-    while ((opt = getopt_long(argc, argv, "ls:c:f:n:pt:h:P:C:D:R:H:F:S:a:e:T:V:NX:I:jv?d:r:q:Z:Y:Qg:G:Ui:J:K:M:O:B:ELWA:y:z:o:1:2:3:4:5:6:7:8:9:!:@:#:$:%:^:&:*:(:)'):_:+:-:=:[:]:{:}w", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "ls:c:f:n:pt:h:P:C:D:R:H:F:S:a:e:T:V:NX:I:jv?d:r:q:Z:Y:Qg:G:Ui:J:K:M:O:B:ELWA:y:z:o:1:2:3:4:5:6:7:8:9:!:@:#:$:%:^:&:*():_:+:-:=:[:]:{:}w", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'l':
                 args->cmd = CMD_LIST_INTERFACES;
                 break;
             case 's':
                 args->cmd = CMD_SHOW_STATS;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case 'c':
                 args->cmd = CMD_CAPTURE;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case 'f':
-                strncpy(args->filter, optarg, 1023);
+                strncpy(args->filter, optarg, sizeof(args->filter) - 1);
                 break;
             case 'n':
                 if (parse_uint(optarg, (unsigned int *)&args->packet_count) < 0) {
@@ -256,11 +282,11 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 break;
             case 't':
                 args->cmd = CMD_TCP_STRESS;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case 'h':
                 args->cmd = CMD_HTTP_STRESS;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case 'P':
                 if (parse_uint(optarg, (unsigned int *)&args->port) < 0) {
@@ -287,15 +313,15 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 }
                 break;
             case 'H':
-                strncpy(args->http_path, optarg, 511);
+                strncpy(args->http_path, optarg, sizeof(args->http_path) - 1);
                 break;
             case 'F':
                 args->cmd = CMD_PACKET_FLOOD;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case 'S':
                 args->cmd = CMD_PORT_SCAN;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case 'a':
                 if (parse_uint(optarg, (unsigned int *)&args->start_port) < 0) {
@@ -330,7 +356,7 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 args->cmd = CMD_SCAN_PROCESSES;
                 break;
             case 'X':
-                strncpy(args->process_filter, optarg, 255);
+                strncpy(args->process_filter, optarg, sizeof(args->process_filter) - 1);
                 break;
             case 'I':
                 if (parse_uint(optarg, (unsigned int *)&args->pid_filter) < 0) {
@@ -340,45 +366,45 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 break;
             case 'd':
                 args->cmd = CMD_DNS_LOOKUP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'r':
                 args->cmd = CMD_DNS_REVERSE;
-                strncpy(args->ip_address, optarg, 255);
+                strncpy(args->ip_address, optarg, sizeof(args->ip_address) - 1);
                 break;
             case 'q':
                 args->cmd = CMD_DNS_QUERY;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'Z':
-                strncpy(args->dns_server, optarg, 255);
+                strncpy(args->dns_server, optarg, sizeof(args->dns_server) - 1);
                 break;
             case 'Y':
                 args->cmd = CMD_DNS_TRACE;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'Q':
                 args->cmd = CMD_DNS_CACHE_FLUSH;
                 break;
             case 'g':
                 args->cmd = CMD_TRACEROUTE;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'G':
                 args->cmd = CMD_TRACEROUTE_TCP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'U':
                 args->cmd = CMD_TRACEROUTE_UDP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'i':
                 args->cmd = CMD_PING;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'J':
                 args->cmd = CMD_PING_TCP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'K':
                 if (parse_uint(optarg, (unsigned int *)&args->count) < 0) {
@@ -388,15 +414,15 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 break;
             case 'M':
                 args->cmd = CMD_SCAN;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case 'O':
                 args->cmd = CMD_SERVICE_SCAN;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'B':
                 args->cmd = CMD_OS_FINGERPRINT;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'E':
                 args->cmd = CMD_NETSTAT;
@@ -412,54 +438,54 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 break;
             case 'y':
                 args->cmd = CMD_ARP_SCAN;
-                strncpy(args->domain, optarg, 255);
+                strncpy(args->domain, optarg, sizeof(args->domain) - 1);
                 break;
             case 'z':
                 args->cmd = CMD_ARP_FLUSH;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case 'o':
                 args->cmd = CMD_ROUTE_TABLE;
                 break;
             case '1':
                 args->cmd = CMD_ROUTE_ADD;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case '2':
                 args->cmd = CMD_ROUTE_DELETE;
-                strncpy(args->host, optarg, 255);
+                strncpy(args->host, optarg, sizeof(args->host) - 1);
                 break;
             case '3':
-                strncpy(args->gateway, optarg, 255);
+                strncpy(args->gateway, optarg, sizeof(args->gateway) - 1);
                 break;
             case '4':
-                strncpy(args->netmask, optarg, 255);
+                strncpy(args->netmask, optarg, sizeof(args->netmask) - 1);
                 break;
             case '5':
                 args->cmd = CMD_FIREWALL_LIST;
                 break;
             case '6':
                 args->cmd = CMD_FIREWALL_ADD;
-                strncpy(args->rule, optarg, 511);
+                strncpy(args->rule, optarg, sizeof(args->rule) - 1);
                 break;
             case '7':
                 args->cmd = CMD_FIREWALL_DELETE;
-                strncpy(args->rule, optarg, 511);
+                strncpy(args->rule, optarg, sizeof(args->rule) - 1);
                 break;
             case '8':
                 args->cmd = CMD_FIREWALL_FLUSH;
-                strncpy(args->chain, optarg, 63);
+                strncpy(args->chain, optarg, sizeof(args->chain) - 1);
                 break;
             case '9':
-                strncpy(args->chain, optarg, 63);
+                strncpy(args->chain, optarg, sizeof(args->chain) - 1);
                 break;
             case '!':
                 args->cmd = CMD_FIREWALL_BLOCK_IP;
-                strncpy(args->ip_address, optarg, 255);
+                strncpy(args->ip_address, optarg, sizeof(args->ip_address) - 1);
                 break;
             case '@':
                 args->cmd = CMD_FIREWALL_UNBLOCK_IP;
-                strncpy(args->ip_address, optarg, 255);
+                strncpy(args->ip_address, optarg, sizeof(args->ip_address) - 1);
                 break;
             case '#':
                 args->cmd = CMD_FIREWALL_BLOCK_PORT;
@@ -477,58 +503,58 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 break;
             case '%':
                 args->cmd = CMD_BANDWIDTH_TEST;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case '^':
                 args->cmd = CMD_BANDWIDTH_MONITOR;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case '&':
                 args->cmd = CMD_MONITOR_START;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case '*':
                 args->cmd = CMD_MONITOR_ALERT;
-                strncpy(args->interface, optarg, 255);
+                strncpy(args->interface, optarg, sizeof(args->interface) - 1);
                 break;
             case '(':
                 args->threshold = atof(optarg);
                 break;
             case ')':
                 args->cmd = CMD_DISCOVERY_PING;
-                strncpy(args->domain, optarg, 255);
+                strncpy(args->domain, optarg, sizeof(args->domain) - 1);
                 break;
             case '_':
                 args->cmd = CMD_DISCOVERY_ARP;
-                strncpy(args->domain, optarg, 255);
+                strncpy(args->domain, optarg, sizeof(args->domain) - 1);
                 break;
             case '+':
                 args->cmd = CMD_SECURITY_SCAN;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case '-':
                 args->cmd = CMD_SECURITY_AUDIT;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case '=':
                 args->cmd = CMD_SECURITY_SSL;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case '[':
                 args->cmd = CMD_SECURITY_SSH;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case ']':
                 args->cmd = CMD_SECURITY_HTTP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case '{':
                 args->cmd = CMD_SECURITY_SMTP;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case '}':
                 args->cmd = CMD_SECURITY_BANNER;
-                strncpy(args->hostname, optarg, 255);
+                strncpy(args->hostname, optarg, sizeof(args->hostname) - 1);
                 break;
             case 'j':
                 args->json_output = 1;
@@ -543,13 +569,13 @@ int parse_args(int argc, char **argv, cli_args_t *args)
                 print_help();
                 exit(0);
             default:
-                print_help();
+                print_usage();
                 return -1;
         }
     }
 
     if (args->cmd == CMD_NONE) {
-        print_help();
+        print_usage();
         return -1;
     }
 

@@ -9,14 +9,14 @@ typedef struct {
     char mac_address[18];
     char vendor[128];
     int up;
-    int ports_open[1024];
+    int ports_open[256];
     int port_count;
-    char services[256][64];
+    char services[64][64];
     int service_count;
 } discovered_host_t;
 
 typedef struct {
-    discovered_host_t hosts[1024];
+    discovered_host_t hosts[256];
     int host_count;
     char network[64];
 } discovery_result_t;

@@ -18,7 +18,7 @@ typedef struct {
 } firewall_rule_t;
 
 typedef struct {
-    firewall_rule_t rules[1024];
+    firewall_rule_t rules[256];
     int rule_count;
 } firewall_ruleset_t;
 

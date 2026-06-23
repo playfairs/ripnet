@@ -13,7 +13,7 @@ typedef struct {
 } route_entry_t;
 
 typedef struct {
-    route_entry_t entries[256];
+    route_entry_t entries[64];
     int entry_count;
 } route_table_t;
 

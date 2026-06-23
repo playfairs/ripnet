@@ -16,14 +16,14 @@ typedef struct {
     char ip_address[46];
     char hostname[256];
     char mac_address[18];
-    port_info_t ports[65536];
+    port_info_t ports[1024];
     int port_count;
     char os_guess[256];
     int up;
 } host_info_t;
 
 typedef struct {
-    host_info_t hosts[1024];
+    host_info_t hosts[256];
     int host_count;
     int total_ports_scanned;
     int open_ports_found;

@@ -15,7 +15,7 @@ typedef struct {
 } bandwidth_stats_t;
 
 typedef struct {
-    bandwidth_stats_t interfaces[32];
+    bandwidth_stats_t interfaces[16];
     int interface_count;
     double total_bandwidth_mbps;
 } bandwidth_result_t;

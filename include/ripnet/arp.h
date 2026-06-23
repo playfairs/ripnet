@@ -12,7 +12,7 @@ typedef struct {
 } arp_entry_t;
 
 typedef struct {
-    arp_entry_t entries[1024];
+    arp_entry_t entries[256];
     int entry_count;
 } arp_table_t;
 

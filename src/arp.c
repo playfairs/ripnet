@@ -63,7 +63,7 @@ int arp_table(arp_table_t *table)
         
         char *question = strchr(line, '?');
         char *at = strchr(line, '@');
-        char *on = strchr(line, 'on');
+        char *on = strstr(line, "on");
         
         if (question && at && on) {
             strncpy(entry->mac_address, at + 1, 17);
