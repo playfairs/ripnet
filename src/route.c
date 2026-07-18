@@ -156,6 +156,7 @@ int route_get(const char *destination, route_entry_t *route)
     return -1;
 }
 
+
 int route_trace(const char *destination)
 {
     printf(COLOR_BOLD COLOR_CYAN "ROUTE TRACE\n" COLOR_RESET);
