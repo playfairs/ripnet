@@ -1,5 +1,7 @@
 # ripnet ![](https://rv.playfairs.cc/ripnetwork/ripnet)
 
+![](./assets/ripnet-text.png)
+
 Network diagnostics, packet analysis, observability, and authorized load-testing toolkit.
 
 ---
