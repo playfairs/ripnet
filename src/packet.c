@@ -73,22 +73,46 @@ flow_entry_t *find_or_create_flow(flow_table_t *table, uint32_t src_ip, uint32_t
 
 int parse_ethernet(const u_char *packet, uint32_t *ethertype)
 {
+    if (packet == NULL || ethertype == NULL) {
+        return -1;
+    }
+
+    if (packet[12] == 0x08 && packet[13] == 0x00) {
+        *ethertype = 0x0800;
+        return 0;
+    }
+    if (packet[12] == 0x86 && packet[13] == 0xDD) {
+        *ethertype = 0x86DD;
+        return 0;
+    }
+
     *ethertype = (packet[12] << 8) | packet[13];
     return 0;
 }
 
 int parse_ipv4(const u_char *packet, uint32_t *src_ip, uint32_t *dst_ip, uint8_t *protocol, uint32_t *payload_offset)
 {
+    if (packet == NULL || src_ip == NULL || dst_ip == NULL || protocol == NULL || payload_offset == NULL) {
+        return -1;
+    }
+
+    if ((packet[0] & 0xF0) != 0x40) {
+        return -1;
+    }
+
     *src_ip = ntohl(*(uint32_t *)(packet + 12));
     *dst_ip = ntohl(*(uint32_t *)(packet + 16));
     *protocol = packet[9];
-    uint8_t ihl = (packet[0] & 0x0F) * 4;
-    *payload_offset = ihl;
+    *payload_offset = (packet[0] & 0x0F) * 4;
     return 0;
 }
 
 int parse_ipv6(const u_char *packet, uint8_t *src_ip, uint8_t *dst_ip, uint8_t *next_header, uint32_t *payload_offset)
 {
+    if (packet == NULL || src_ip == NULL || dst_ip == NULL || next_header == NULL || payload_offset == NULL) {
+        return -1;
+    }
+
     memcpy(src_ip, packet + 8, 16);
     memcpy(dst_ip, packet + 24, 16);
     *next_header = packet[6];
@@ -98,6 +122,10 @@ int parse_ipv6(const u_char *packet, uint8_t *src_ip, uint8_t *dst_ip, uint8_t *
 
 int parse_tcp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
 {
+    if (packet == NULL || src_port == NULL || dst_port == NULL) {
+        return -1;
+    }
+
     *src_port = ntohs(*(uint16_t *)packet);
     *dst_port = ntohs(*(uint16_t *)(packet + 2));
     return 0;
@@ -105,6 +133,10 @@ int parse_tcp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
 
 int parse_udp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
 {
+    if (packet == NULL || src_port == NULL || dst_port == NULL) {
+        return -1;
+    }
+
     *src_port = ntohs(*(uint16_t *)packet);
     *dst_port = ntohs(*(uint16_t *)(packet + 2));
     return 0;
@@ -112,14 +144,19 @@ int parse_udp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
 
 int parse_icmp(const u_char *packet)
 {
-    (void)packet;
-    return 0;
+    if (packet == NULL) {
+        return -1;
+    }
+    return (packet[0] == 8 || packet[0] == 0) ? 0 : -1;
 }
 
 void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
     (void)args;
-    (void)header;
+
+    if (counters == NULL || flow_table == NULL || packet == NULL || header == NULL) {
+        return;
+    }
 
     counters->total++;
 

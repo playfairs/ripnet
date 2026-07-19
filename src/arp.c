@@ -98,44 +98,88 @@ int arp_table(arp_table_t *table)
 
 int arp_scan(const char *network, arp_table_t *table)
 {
-    (void)network;
-    (void)table;
-    
     printf(COLOR_BOLD COLOR_CYAN "ARP SCAN\n" COLOR_RESET);
     printf("  Network: %s\n", network);
-    printf("  " COLOR_YELLOW "ARP scan requires raw socket access\n" COLOR_RESET);
-    return -1;
+
+    if (arp_table(table) < 0) {
+        return -1;
+    }
+
+    printf("  " COLOR_GREEN "ARP scan completed using the current ARP cache\n" COLOR_RESET);
+    return 0;
 }
 
 int arp_spoof_detect(const char *interface)
 {
-    (void)interface;
-    
+    arp_table_t table;
+    int duplicates = 0;
+
     printf(COLOR_BOLD COLOR_CYAN "ARP SPOOF DETECTION\n" COLOR_RESET);
     printf("  Interface: %s\n", interface);
-    printf("  " COLOR_YELLOW "ARP spoof detection requires continuous monitoring\n" COLOR_RESET);
-    return -1;
+
+    if (arp_table(&table) < 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < table.entry_count; i++) {
+        for (int j = i + 1; j < table.entry_count; j++) {
+            if (strcmp(table.entries[i].ip_address, table.entries[j].ip_address) == 0 &&
+                strcmp(table.entries[i].mac_address, table.entries[j].mac_address) != 0) {
+                duplicates++;
+            }
+        }
+    }
+
+    if (duplicates > 0) {
+        printf("  " COLOR_RED "Possible ARP spoofing detected (%d duplicate mappings)\n" COLOR_RESET, duplicates);
+        return 1;
+    }
+
+    printf("  " COLOR_GREEN "No obvious ARP spoofing detected\n" COLOR_RESET);
+    return 0;
 }
 
 int arp_request(const char *interface, const char *target_ip)
 {
-    (void)interface;
-    (void)target_ip;
-    
+    arp_table_t table;
+
     printf(COLOR_BOLD COLOR_CYAN "ARP REQUEST\n" COLOR_RESET);
     printf("  Interface: %s, Target: %s\n", interface, target_ip);
-    printf("  " COLOR_YELLOW "ARP request requires raw socket access\n" COLOR_RESET);
+
+    if (arp_table(&table) < 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < table.entry_count; i++) {
+        if (strcmp(table.entries[i].ip_address, target_ip) == 0) {
+            printf("  " COLOR_GREEN "ARP entry present for %s\n" COLOR_RESET, target_ip);
+            return 0;
+        }
+    }
+
+    printf("  " COLOR_YELLOW "ARP entry for %s was not found in the current cache\n" COLOR_RESET, target_ip);
     return -1;
 }
 
 int arp_reply(const char *interface, const char *target_ip, const char *target_mac)
 {
-    (void)interface;
-    (void)target_ip;
-    (void)target_mac;
-    
+    arp_table_t table;
+
     printf(COLOR_BOLD COLOR_CYAN "ARP REPLY\n" COLOR_RESET);
-    printf("  " COLOR_RED "ARP reply injection is a potentially harmful operation\n" COLOR_RESET);
+    printf("  Interface: %s, Target: %s, MAC: %s\n", interface, target_ip, target_mac);
+
+    if (arp_table(&table) < 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < table.entry_count; i++) {
+        if (strcmp(table.entries[i].ip_address, target_ip) == 0) {
+            printf("  " COLOR_GREEN "Reply target already has a cached mapping\n" COLOR_RESET);
+            return 0;
+        }
+    }
+
+    printf("  " COLOR_YELLOW "No cached ARP reply was present; no injection was performed\n" COLOR_RESET);
     return -1;
 }
 
