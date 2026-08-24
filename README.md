@@ -1,4 +1,4 @@
-# ripnet ![](https://rv.playfairs.cc/ripnetwork/ripnet)
+# [ripnet](https://ripnet.cc)
 
 ![](./assets/icon/ripnet-banner-(500x100).png)
 
