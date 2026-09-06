@@ -19,10 +19,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int handle_ddos_easter_egg(int argc, char **argv)
+{
+    if (argc < 2 || strcmp(argv[1], "ddos") != 0) {
+        return 0;
+    }
+
+    printf("ddos: that's not very diagnostic of you.\n");
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) {
         print_usage();
+        return 0;
+    }
+
+    if (handle_ddos_easter_egg(argc, argv)) {
         return 0;
     }
 
