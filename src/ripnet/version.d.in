@@ -1,0 +1,3 @@
+module buildinfo;
+
+enum versionString = @RIPNET_VERSION@;
