@@ -89,7 +89,9 @@ jobs:
 
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag -a "$tag" "$GITHUB_SHA" -m "Dev build ${tag}"
+          git tag -a "$tag" "$GITHUB_SHA" \
+            -m "Dev build ${tag}" \
+            -m "Install the downloaded executable with: chmod +x <file> && sudo install -m 755 <file> /usr/local/bin/ripnet"
           git push origin "$tag"
           printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
 
@@ -99,6 +101,19 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           prerelease: true
+          body: |
+            ## Installation
+
+            Download the executable for your platform, then run:
+
+            ```sh
+            chmod +x ripnet-v${{ steps.verify.outputs.version }}-linux-x86_64
+            sudo install -m 755 ripnet-v${{ steps.verify.outputs.version }}-linux-x86_64 /usr/local/bin/ripnet
+            ```
+
+            For macOS, use the `ripnet-v${{ steps.verify.outputs.version }}-macos-arm64` file in both commands.
+
+            The release assets are raw executables without a file extension. `install -m 755` sets the executable permission and installs `ripnet` on your PATH.
           files: |
             dist/linux-x86_64/ripnet-v${{ steps.verify.outputs.version }}-linux-x86_64
             dist/macos-arm64/ripnet-v${{ steps.verify.outputs.version }}-macos-arm64
@@ -307,7 +322,9 @@ jobs:
           fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag -a "$tag" -m "Release ${tag}"
+          git tag -a "$tag" \
+            -m "Release ${tag}" \
+            -m "Install the downloaded executable with: chmod +x <file> && sudo install -m 755 <file> /usr/local/bin/ripnet"
           git push origin "$tag"
 
       - name: Publish GitHub release
@@ -317,6 +334,19 @@ jobs:
           name: ripnet v${{ needs.validate-release.outputs.version }}
           generate_release_notes: true
           prerelease: ${{ needs.validate-release.outputs.prerelease }}
+          body: |
+            ## Installation
+
+            Download the executable for your platform, then run:
+
+            ```sh
+            chmod +x ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64
+            sudo install -m 755 ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64 /usr/local/bin/ripnet
+            ```
+
+            For macOS, use the `ripnet-v${{ needs.validate-release.outputs.version }}-macos-arm64` file in both commands.
+
+            The release assets are raw executables without a file extension. `install -m 755` sets the executable permission and installs `ripnet` on your PATH.
           files: |
             dist/release-linux-x86_64/ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64
             dist/release-macos-arm64/ripnet-v${{ needs.validate-release.outputs.version }}-macos-arm64
