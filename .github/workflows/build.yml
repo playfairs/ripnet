@@ -17,9 +17,50 @@ permissions:
 
 concurrency:
   group: build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  dev-tag:
+    name: Create dev tag
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ripnet-dev-tags
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create numbered dev tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+
+          last_number="$(git tag --list 'ripnet-dev.*' \
+            | sed -nE 's/^ripnet-dev\.([0-9]+)$/\1/p' \
+            | sort -n \
+            | tail -n 1)"
+          next_number=0
+          if [[ -n "$last_number" ]]; then
+            next_number=$((last_number + 1))
+          fi
+
+          tag="ripnet-dev.${next_number}"
+          while git ls-remote --exit-code --refs origin "refs/tags/${tag}" >/dev/null 2>&1; do
+            next_number=$((next_number + 1))
+            tag="ripnet-dev.${next_number}"
+          done
+
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag -a "$tag" "$GITHUB_SHA" -m "Dev build ${tag}"
+          git push origin "$tag"
+
   linux-build:
     name: Linux x86_64
     runs-on: ubuntu-24.04
@@ -211,7 +252,6 @@ jobs:
       - name: Create release tag
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.validate-release.outputs.version }}
         run: |
           set -euo pipefail
@@ -220,33 +260,18 @@ jobs:
             echo "Tag ${tag} already exists" >&2
             exit 1
           fi
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release ${tag} already exists" >&2
-            exit 1
-          fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git tag -a "$tag" -m "Release ${tag}"
           git push origin "$tag"
 
       - name: Publish GitHub release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.validate-release.outputs.version }}
-          PRERELEASE: ${{ needs.validate-release.outputs.prerelease }}
-        run: |
-          set -euo pipefail
-          tag="v${VERSION}"
-          linux_asset="dist/release-linux-x86_64/ripnet-v${VERSION}-linux-x86_64"
-          macos_asset="dist/release-macos-arm64/ripnet-v${VERSION}-macos-arm64"
-          prerelease_args=()
-          if [[ "$PRERELEASE" == true ]]; then
-            prerelease_args+=(--prerelease)
-          fi
-          gh release create "$tag" \
-            "$linux_asset" \
-            "$macos_asset" \
-            --title "ripnet ${tag}" \
-            --generate-notes \
-            "${prerelease_args[@]}"
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.validate-release.outputs.version }}
+          name: ripnet v${{ needs.validate-release.outputs.version }}
+          generate_release_notes: true
+          prerelease: ${{ needs.validate-release.outputs.prerelease }}
+          files: |
+            dist/release-linux-x86_64/ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64
+            dist/release-macos-arm64/ripnet-v${{ needs.validate-release.outputs.version }}-macos-arm64
