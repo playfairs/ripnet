@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     char protocol[16];
     char local_address[64];
     char remote_address[64];
@@ -14,7 +15,8 @@ typedef struct {
     uint64_t bytes_received;
 } connection_info_t;
 
-typedef struct {
+typedef struct
+{
     connection_info_t connections[4096];
     int connection_count;
     int tcp_count;

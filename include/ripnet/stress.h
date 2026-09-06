@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     uint64_t total_connections;
     uint64_t successful_connections;
     uint64_t failed_connections;
@@ -19,7 +20,8 @@ typedef struct {
     double throughput_mbps;
 } stress_result_t;
 
-typedef struct {
+typedef struct
+{
     char *host;
     int port;
     int concurrency;
@@ -29,13 +31,26 @@ typedef struct {
     char *http_path;
 } stress_config_t;
 
-int run_tcp_stress(const stress_config_t *config, stress_result_t *result);
-int run_http_stress(const stress_config_t *config, stress_result_t *result);
+int run_tcp_stress(const stress_config_t *config,
+                   stress_result_t *result);
+int run_http_stress(const stress_config_t *config,
+                    stress_result_t *result);
 void print_stress_results(const stress_result_t *result);
 void print_stress_json(const stress_result_t *result);
-int calculate_percentiles(double *latencies, int count, double *p50, double *p95, double *p99);
-int packet_flood(const char *iface, const char *target_ip, int port, int duration_sec, uint64_t packets_per_sec);
-int scan_ports(const char *target_ip, int start_port, int end_port, int timeout_ms);
+int calculate_percentiles(double *latencies,
+                          int count,
+                          double *p50,
+                          double *p95,
+                          double *p99);
+int packet_flood(const char *iface,
+                 const char *target_ip,
+                 int port,
+                 int duration_sec,
+                 uint64_t packets_per_sec);
+int scan_ports(const char *target_ip,
+               int start_port,
+               int end_port,
+               int timeout_ms);
 int detect_vulnerabilities(const char *target_ip, int port);
 
 #endif

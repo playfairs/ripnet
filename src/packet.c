@@ -1,13 +1,13 @@
 #include "ripnet/packet.h"
 #include "ripnet/util.h"
+#include <arpa/inet.h>
+#include <inttypes.h>
+#include <pcap.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pcap.h>
-#include <arpa/inet.h>
-#include <signal.h>
 #include <unistd.h>
-#include <inttypes.h>
 
 static pcap_t *handle = NULL;
 static packet_counters_t *counters = NULL;
@@ -29,13 +29,15 @@ void init_packet_counters(packet_counters_t *c)
 void init_flow_table(flow_table_t *table)
 {
     table->capacity = 256;
-    table->entries = xcalloc(table->capacity, sizeof(flow_entry_t));
+    table->entries =
+        xcalloc(table->capacity, sizeof(flow_entry_t));
     table->count = 0;
 }
 
 void free_flow_table(flow_table_t *table)
 {
-    if (table->entries) {
+    if (table->entries)
+    {
         free(table->entries);
         table->entries = NULL;
     }
@@ -43,20 +45,32 @@ void free_flow_table(flow_table_t *table)
     table->capacity = 0;
 }
 
-flow_entry_t *find_or_create_flow(flow_table_t *table, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t protocol)
+flow_entry_t *find_or_create_flow(flow_table_t *table,
+                                  uint32_t src_ip,
+                                  uint32_t dst_ip,
+                                  uint16_t src_port,
+                                  uint16_t dst_port,
+                                  uint8_t protocol)
 {
-    for (int i = 0; i < table->count; i++) {
+    for (int i = 0; i < table->count; i++)
+    {
         flow_entry_t *entry = &table->entries[i];
-        if (entry->src_ip == src_ip && entry->dst_ip == dst_ip &&
-            entry->src_port == src_port && entry->dst_port == dst_port &&
-            entry->protocol == protocol) {
+        if (entry->src_ip == src_ip
+            && entry->dst_ip == dst_ip
+            && entry->src_port == src_port
+            && entry->dst_port == dst_port
+            && entry->protocol == protocol)
+        {
             return entry;
         }
     }
 
-    if (table->count >= table->capacity) {
+    if (table->count >= table->capacity)
+    {
         table->capacity *= 2;
-        table->entries = xrealloc(table->entries, table->capacity * sizeof(flow_entry_t));
+        table->entries = xrealloc(
+            table->entries,
+            table->capacity * sizeof(flow_entry_t));
     }
 
     flow_entry_t *entry = &table->entries[table->count++];
@@ -71,17 +85,21 @@ flow_entry_t *find_or_create_flow(flow_table_t *table, uint32_t src_ip, uint32_t
     return entry;
 }
 
-int parse_ethernet(const u_char *packet, uint32_t *ethertype)
+int parse_ethernet(const u_char *packet,
+                   uint32_t *ethertype)
 {
-    if (packet == NULL || ethertype == NULL) {
+    if (packet == NULL || ethertype == NULL)
+    {
         return -1;
     }
 
-    if (packet[12] == 0x08 && packet[13] == 0x00) {
+    if (packet[12] == 0x08 && packet[13] == 0x00)
+    {
         *ethertype = 0x0800;
         return 0;
     }
-    if (packet[12] == 0x86 && packet[13] == 0xDD) {
+    if (packet[12] == 0x86 && packet[13] == 0xDD)
+    {
         *ethertype = 0x86DD;
         return 0;
     }
@@ -90,13 +108,20 @@ int parse_ethernet(const u_char *packet, uint32_t *ethertype)
     return 0;
 }
 
-int parse_ipv4(const u_char *packet, uint32_t *src_ip, uint32_t *dst_ip, uint8_t *protocol, uint32_t *payload_offset)
+int parse_ipv4(const u_char *packet,
+               uint32_t *src_ip,
+               uint32_t *dst_ip,
+               uint8_t *protocol,
+               uint32_t *payload_offset)
 {
-    if (packet == NULL || src_ip == NULL || dst_ip == NULL || protocol == NULL || payload_offset == NULL) {
+    if (packet == NULL || src_ip == NULL || dst_ip == NULL
+        || protocol == NULL || payload_offset == NULL)
+    {
         return -1;
     }
 
-    if ((packet[0] & 0xF0) != 0x40) {
+    if ((packet[0] & 0xF0) != 0x40)
+    {
         return -1;
     }
 
@@ -107,9 +132,15 @@ int parse_ipv4(const u_char *packet, uint32_t *src_ip, uint32_t *dst_ip, uint8_t
     return 0;
 }
 
-int parse_ipv6(const u_char *packet, uint8_t *src_ip, uint8_t *dst_ip, uint8_t *next_header, uint32_t *payload_offset)
+int parse_ipv6(const u_char *packet,
+               uint8_t *src_ip,
+               uint8_t *dst_ip,
+               uint8_t *next_header,
+               uint32_t *payload_offset)
 {
-    if (packet == NULL || src_ip == NULL || dst_ip == NULL || next_header == NULL || payload_offset == NULL) {
+    if (packet == NULL || src_ip == NULL || dst_ip == NULL
+        || next_header == NULL || payload_offset == NULL)
+    {
         return -1;
     }
 
@@ -120,9 +151,13 @@ int parse_ipv6(const u_char *packet, uint8_t *src_ip, uint8_t *dst_ip, uint8_t *
     return 0;
 }
 
-int parse_tcp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
+int parse_tcp(const u_char *packet,
+              uint16_t *src_port,
+              uint16_t *dst_port)
 {
-    if (packet == NULL || src_port == NULL || dst_port == NULL) {
+    if (packet == NULL || src_port == NULL
+        || dst_port == NULL)
+    {
         return -1;
     }
 
@@ -131,9 +166,13 @@ int parse_tcp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
     return 0;
 }
 
-int parse_udp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
+int parse_udp(const u_char *packet,
+              uint16_t *src_port,
+              uint16_t *dst_port)
 {
-    if (packet == NULL || src_port == NULL || dst_port == NULL) {
+    if (packet == NULL || src_port == NULL
+        || dst_port == NULL)
+    {
         return -1;
     }
 
@@ -144,82 +183,140 @@ int parse_udp(const u_char *packet, uint16_t *src_port, uint16_t *dst_port)
 
 int parse_icmp(const u_char *packet)
 {
-    if (packet == NULL) {
+    if (packet == NULL)
+    {
         return -1;
     }
     return (packet[0] == 8 || packet[0] == 0) ? 0 : -1;
 }
 
-void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
+void process_packet(u_char *args,
+                    const struct pcap_pkthdr *header,
+                    const u_char *packet)
 {
     (void)args;
 
-    if (counters == NULL || flow_table == NULL || packet == NULL || header == NULL) {
+    if (counters == NULL || flow_table == NULL
+        || packet == NULL || header == NULL)
+    {
         return;
     }
 
     counters->total++;
 
     uint32_t ethertype;
-    if (parse_ethernet(packet, &ethertype) == 0) {
+    if (parse_ethernet(packet, &ethertype) == 0)
+    {
         counters->ethernet++;
 
-        if (ethertype == 0x0800) {
+        if (ethertype == 0x0800)
+        {
             counters->ipv4++;
 
             uint32_t src_ip, dst_ip;
             uint8_t protocol;
             uint32_t payload_offset;
 
-            if (parse_ipv4(packet + 14, &src_ip, &dst_ip, &protocol, &payload_offset) == 0) {
-                const u_char *payload = packet + 14 + payload_offset;
+            if (parse_ipv4(packet + 14,
+                           &src_ip,
+                           &dst_ip,
+                           &protocol,
+                           &payload_offset)
+                == 0)
+            {
+                const u_char *payload =
+                    packet + 14 + payload_offset;
 
-                if (protocol == 6) {
+                if (protocol == 6)
+                {
                     counters->tcp++;
 
                     uint16_t src_port, dst_port;
-                    if (parse_tcp(payload, &src_port, &dst_port) == 0) {
-                        flow_entry_t *flow = find_or_create_flow(flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
+                    if (parse_tcp(payload,
+                                  &src_port,
+                                  &dst_port)
+                        == 0)
+                    {
+                        flow_entry_t *flow =
+                            find_or_create_flow(flow_table,
+                                                src_ip,
+                                                dst_ip,
+                                                src_port,
+                                                dst_port,
+                                                protocol);
                         flow->packet_count++;
                         flow->byte_count += header->len;
                     }
-                } else if (protocol == 17) {
+                }
+                else if (protocol == 17)
+                {
                     counters->udp++;
 
                     uint16_t src_port, dst_port;
-                    if (parse_udp(payload, &src_port, &dst_port) == 0) {
-                        flow_entry_t *flow = find_or_create_flow(flow_table, src_ip, dst_ip, src_port, dst_port, protocol);
+                    if (parse_udp(payload,
+                                  &src_port,
+                                  &dst_port)
+                        == 0)
+                    {
+                        flow_entry_t *flow =
+                            find_or_create_flow(flow_table,
+                                                src_ip,
+                                                dst_ip,
+                                                src_port,
+                                                dst_port,
+                                                protocol);
                         flow->packet_count++;
                         flow->byte_count += header->len;
                     }
-                } else if (protocol == 1) {
+                }
+                else if (protocol == 1)
+                {
                     counters->icmp++;
                 }
             }
-        } else if (ethertype == 0x86DD) {
+        }
+        else if (ethertype == 0x86DD)
+        {
             counters->ipv6++;
 
             uint8_t src_ip[16], dst_ip[16];
             uint8_t next_header;
             uint32_t payload_offset;
 
-            if (parse_ipv6(packet + 14, src_ip, dst_ip, &next_header, &payload_offset) == 0) {
-                if (next_header == 6) {
+            if (parse_ipv6(packet + 14,
+                           src_ip,
+                           dst_ip,
+                           &next_header,
+                           &payload_offset)
+                == 0)
+            {
+                if (next_header == 6)
+                {
                     counters->tcp++;
-                } else if (next_header == 17) {
+                }
+                else if (next_header == 17)
+                {
                     counters->udp++;
-                } else if (next_header == 58) {
+                }
+                else if (next_header == 58)
+                {
                     counters->icmp++;
                 }
             }
-        } else {
+        }
+        else
+        {
             counters->other++;
         }
-    } else {
+    }
+    else
+    {
         counters->other++;
     }
 
-    if (packet_limit > 0 && counters->total >= (uint64_t)packet_limit) {
+    if (packet_limit > 0
+        && counters->total >= (uint64_t)packet_limit)
+    {
         should_stop = 1;
     }
 }
@@ -227,7 +324,8 @@ void process_packet(u_char *args, const struct pcap_pkthdr *header, const u_char
 void print_packet_summary(const packet_counters_t *counters)
 {
     printf("Packet Capture Summary:\n");
-    printf("  Total packets: %" PRIu64 "\n", counters->total);
+    printf("  Total packets: %" PRIu64 "\n",
+           counters->total);
     printf("  Ethernet: %" PRIu64 "\n", counters->ethernet);
     printf("  IPv4: %" PRIu64 "\n", counters->ipv4);
     printf("  IPv6: %" PRIu64 "\n", counters->ipv6);
@@ -240,50 +338,95 @@ void print_packet_summary(const packet_counters_t *counters)
 void print_flows(const flow_table_t *table)
 {
     printf("\nTop Flows:\n");
-    for (int i = 0; i < table->count && i < 20; i++) {
+    for (int i = 0; i < table->count && i < 20; i++)
+    {
         struct in_addr src_addr, dst_addr;
         src_addr.s_addr = htonl(table->entries[i].src_ip);
         dst_addr.s_addr = htonl(table->entries[i].dst_ip);
 
-        char src_ip[INET_ADDRSTRLEN], dst_ip[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &src_addr, src_ip, INET_ADDRSTRLEN);
-        inet_ntop(AF_INET, &dst_addr, dst_ip, INET_ADDRSTRLEN);
+        char src_ip[INET_ADDRSTRLEN],
+            dst_ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET,
+                  &src_addr,
+                  src_ip,
+                  INET_ADDRSTRLEN);
+        inet_ntop(AF_INET,
+                  &dst_addr,
+                  dst_ip,
+                  INET_ADDRSTRLEN);
 
-        const char *proto = table->entries[i].protocol == 6 ? "TCP" : 
-                           table->entries[i].protocol == 17 ? "UDP" : "OTHER";
+        const char *proto =
+            table->entries[i].protocol == 6    ? "TCP"
+            : table->entries[i].protocol == 17 ? "UDP"
+                                               : "OTHER";
 
-        printf("  %s %s:%u -> %s:%u (%" PRIu64 " packets, %" PRIu64 " bytes)\n",
-               proto, src_ip, table->entries[i].src_port, dst_ip, table->entries[i].dst_port,
-               table->entries[i].packet_count, table->entries[i].byte_count);
+        printf("  %s %s:%u -> %s:%u (%" PRIu64
+               " packets, %" PRIu64 " bytes)\n",
+               proto,
+               src_ip,
+               table->entries[i].src_port,
+               dst_ip,
+               table->entries[i].dst_port,
+               table->entries[i].packet_count,
+               table->entries[i].byte_count);
     }
 }
 
-int start_capture(const char *iface, const char *filter, int count, int promisc)
+int start_capture(const char *iface,
+                  const char *filter,
+                  int count,
+                  int promisc)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     struct bpf_program fp;
 
-    handle = pcap_open_live(iface, BUFSIZ, promisc, 1000, errbuf);
-    if (handle == NULL) {
-        fprintf(stderr, "Could not open device %s: %s\n", iface, errbuf);
+    handle = pcap_open_live(iface,
+                            BUFSIZ,
+                            promisc,
+                            1000,
+                            errbuf);
+    if (handle == NULL)
+    {
+        fprintf(stderr,
+                "Could not open device %s: %s\n",
+                iface,
+                errbuf);
         return -1;
     }
 
-    if (pcap_datalink(handle) != DLT_EN10MB) {
-        fprintf(stderr, "Device %s does not provide Ethernet headers\n", iface);
+    if (pcap_datalink(handle) != DLT_EN10MB)
+    {
+        fprintf(
+            stderr,
+            "Device %s does not provide Ethernet headers\n",
+            iface);
         pcap_close(handle);
         return -1;
     }
 
-    if (filter && strlen(filter) > 0) {
-        if (pcap_compile(handle, &fp, filter, 0, PCAP_NETMASK_UNKNOWN) == -1) {
-            fprintf(stderr, "Could not parse filter %s: %s\n", filter, pcap_geterr(handle));
+    if (filter && strlen(filter) > 0)
+    {
+        if (pcap_compile(handle,
+                         &fp,
+                         filter,
+                         0,
+                         PCAP_NETMASK_UNKNOWN)
+            == -1)
+        {
+            fprintf(stderr,
+                    "Could not parse filter %s: %s\n",
+                    filter,
+                    pcap_geterr(handle));
             pcap_close(handle);
             return -1;
         }
 
-        if (pcap_setfilter(handle, &fp) == -1) {
-            fprintf(stderr, "Could not install filter %s: %s\n", filter, pcap_geterr(handle));
+        if (pcap_setfilter(handle, &fp) == -1)
+        {
+            fprintf(stderr,
+                    "Could not install filter %s: %s\n",
+                    filter,
+                    pcap_geterr(handle));
             pcap_freecode(&fp);
             pcap_close(handle);
             return -1;
@@ -293,13 +436,15 @@ int start_capture(const char *iface, const char *filter, int count, int promisc)
     }
 
     counters = malloc(sizeof(packet_counters_t));
-    if (!counters) {
+    if (!counters)
+    {
         fprintf(stderr, "Failed to allocate counters\n");
         return -1;
     }
     init_packet_counters(counters);
     flow_table = malloc(sizeof(flow_table_t));
-    if (!flow_table) {
+    if (!flow_table)
+    {
         fprintf(stderr, "Failed to allocate flow table\n");
         return -1;
     }
@@ -311,10 +456,12 @@ int start_capture(const char *iface, const char *filter, int count, int promisc)
     signal(SIGTERM, sigint_handler);
 
     printf("Starting capture on interface %s\n", iface);
-    if (filter && strlen(filter) > 0) {
+    if (filter && strlen(filter) > 0)
+    {
         printf("Filter: %s\n", filter);
     }
-    if (count > 0) {
+    if (count > 0)
+    {
         printf("Packet limit: %d\n", count);
     }
     printf("Press Ctrl+C to stop\n\n");
@@ -338,7 +485,8 @@ int start_capture(const char *iface, const char *filter, int count, int promisc)
 
 void stop_capture(void)
 {
-    if (handle) {
+    if (handle)
+    {
         pcap_breakloop(handle);
     }
 }

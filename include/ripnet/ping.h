@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     char destination[256];
     uint64_t packets_sent;
     uint64_t packets_received;
@@ -15,11 +16,19 @@ typedef struct {
     int success;
 } ping_result_t;
 
-int ping(const char *hostname, int count, ping_result_t *result);
-int ping_sweep(const char *network, int start_ip, int end_ip);
+int ping(const char *hostname,
+         int count,
+         ping_result_t *result);
+int ping_sweep(const char *network,
+               int start_ip,
+               int end_ip);
 int ping_flood(const char *hostname, int duration_sec);
-int ping_tcp(const char *hostname, int port, ping_result_t *result);
-int ping_udp(const char *hostname, int port, ping_result_t *result);
+int ping_tcp(const char *hostname,
+             int port,
+             ping_result_t *result);
+int ping_udp(const char *hostname,
+             int port,
+             ping_result_t *result);
 void print_ping_results(const ping_result_t *result);
 
 #endif

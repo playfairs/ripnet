@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef enum {
+typedef enum
+{
     CMD_NONE,
     CMD_LIST_INTERFACES,
     CMD_SHOW_STATS,
@@ -108,7 +109,8 @@ typedef enum {
     CMD_SECURITY_HONEYPOT_DETECT
 } command_t;
 
-typedef struct {
+typedef struct
+{
     command_t cmd;
     char interface[128];
     char filter[512];

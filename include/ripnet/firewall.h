@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     char chain[64];
     int rule_num;
     char packets[32];
@@ -17,7 +18,8 @@ typedef struct {
     char options[256];
 } firewall_rule_t;
 
-typedef struct {
+typedef struct
+{
     firewall_rule_t rules[256];
     int rule_count;
 } firewall_ruleset_t;
@@ -32,6 +34,7 @@ int firewall_block_ip(const char *ip);
 int firewall_unblock_ip(const char *ip);
 int firewall_block_port(int port, const char *protocol);
 int firewall_unblock_port(int port, const char *protocol);
-void print_firewall_rules(const firewall_ruleset_t *ruleset);
+void print_firewall_rules(
+    const firewall_ruleset_t *ruleset);
 
 #endif

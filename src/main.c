@@ -1,22 +1,22 @@
-#include "ripnet/cli.h"
-#include "ripnet/stats.h"
-#include "ripnet/packet.h"
-#include "ripnet/stress.h"
-#include "ripnet/process.h"
-#include "ripnet/dns.h"
-#include "ripnet/traceroute.h"
-#include "ripnet/ping.h"
-#include "ripnet/scan.h"
-#include "ripnet/netstat.h"
 #include "ripnet/arp.h"
-#include "ripnet/route.h"
-#include "ripnet/firewall.h"
 #include "ripnet/bandwidth.h"
-#include "ripnet/monitor.h"
+#include "ripnet/cli.h"
 #include "ripnet/discovery.h"
+#include "ripnet/dns.h"
+#include "ripnet/firewall.h"
+#include "ripnet/monitor.h"
+#include "ripnet/netstat.h"
+#include "ripnet/packet.h"
+#include "ripnet/ping.h"
+#include "ripnet/process.h"
+#include "ripnet/route.h"
+#include "ripnet/scan.h"
 #include "ripnet/security.h"
-#include <stdio.h>
+#include "ripnet/stats.h"
+#include "ripnet/stress.h"
+#include "ripnet/traceroute.h"
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -37,34 +37,52 @@ static int run_scan_variant(const cli_args_t *args)
     int scan_result;
 
     result = calloc(1, sizeof(*result));
-    if (!result) {
+    if (!result)
+    {
         return -1;
     }
-    switch (args->cmd) {
-        case CMD_NETWORK_SCAN:
-            scan_result = network_scan(args->domain, result);
-            break;
-        case CMD_UDP_SCAN:
-            scan_result = udp_scan(args->host, args->start_port, args->end_port, result);
-            break;
-        case CMD_SYN_SCAN:
-            scan_result = syn_scan(args->host, args->start_port, args->end_port, result);
-            break;
-        case CMD_FIN_SCAN:
-            scan_result = fin_scan(args->host, args->start_port, args->end_port, result);
-            break;
-        case CMD_XMAS_SCAN:
-            scan_result = xmas_scan(args->host, args->start_port, args->end_port, result);
-            break;
-        case CMD_NULL_SCAN:
-            scan_result = null_scan(args->host, args->start_port, args->end_port, result);
-            break;
-        default:
-            free(result);
-            return -1;
+    switch (args->cmd)
+    {
+    case CMD_NETWORK_SCAN:
+        scan_result = network_scan(args->domain, result);
+        break;
+    case CMD_UDP_SCAN:
+        scan_result = udp_scan(args->host,
+                               args->start_port,
+                               args->end_port,
+                               result);
+        break;
+    case CMD_SYN_SCAN:
+        scan_result = syn_scan(args->host,
+                               args->start_port,
+                               args->end_port,
+                               result);
+        break;
+    case CMD_FIN_SCAN:
+        scan_result = fin_scan(args->host,
+                               args->start_port,
+                               args->end_port,
+                               result);
+        break;
+    case CMD_XMAS_SCAN:
+        scan_result = xmas_scan(args->host,
+                                args->start_port,
+                                args->end_port,
+                                result);
+        break;
+    case CMD_NULL_SCAN:
+        scan_result = null_scan(args->host,
+                                args->start_port,
+                                args->end_port,
+                                result);
+        break;
+    default:
+        free(result);
+        return -1;
     }
 
-    if (scan_result < 0) {
+    if (scan_result < 0)
+    {
         free(result);
         return -1;
     }
@@ -78,43 +96,46 @@ static int run_discovery_variant(const cli_args_t *args)
     discovery_result_t *result;
     int (*discovery)(const char *, discovery_result_t *);
 
-    switch (args->cmd) {
-        case CMD_DISCOVERY_DNS:
-            discovery = discovery_dns;
-            break;
-        case CMD_DISCOVERY_SNMP:
-            discovery = discovery_snmp;
-            break;
-        case CMD_DISCOVERY_UPNP:
-            discovery = discovery_upnp;
-            break;
-        case CMD_DISCOVERY_MDNS:
-            discovery = discovery_mdns;
-            break;
-        case CMD_DISCOVERY_LLMNR:
-            discovery = discovery_llmnr;
-            break;
-        case CMD_DISCOVERY_NETBIOS:
-            discovery = discovery_netbios;
-            break;
-        case CMD_DISCOVERY_SMB:
-            discovery = discovery_smb;
-            break;
-        case CMD_DISCOVERY_HTTP:
-            discovery = discovery_http;
-            break;
-        case CMD_DISCOVERY_SSL:
-            discovery = discovery_ssl;
-            break;
-        default:
-            return -1;
+    switch (args->cmd)
+    {
+    case CMD_DISCOVERY_DNS:
+        discovery = discovery_dns;
+        break;
+    case CMD_DISCOVERY_SNMP:
+        discovery = discovery_snmp;
+        break;
+    case CMD_DISCOVERY_UPNP:
+        discovery = discovery_upnp;
+        break;
+    case CMD_DISCOVERY_MDNS:
+        discovery = discovery_mdns;
+        break;
+    case CMD_DISCOVERY_LLMNR:
+        discovery = discovery_llmnr;
+        break;
+    case CMD_DISCOVERY_NETBIOS:
+        discovery = discovery_netbios;
+        break;
+    case CMD_DISCOVERY_SMB:
+        discovery = discovery_smb;
+        break;
+    case CMD_DISCOVERY_HTTP:
+        discovery = discovery_http;
+        break;
+    case CMD_DISCOVERY_SSL:
+        discovery = discovery_ssl;
+        break;
+    default:
+        return -1;
     }
 
     result = calloc(1, sizeof(*result));
-    if (!result) {
+    if (!result)
+    {
         return -1;
     }
-    if (discovery(args->domain, result) < 0) {
+    if (discovery(args->domain, result) < 0)
+    {
         free(result);
         return -1;
     }
@@ -123,28 +144,35 @@ static int run_discovery_variant(const cli_args_t *args)
     return 0;
 }
 
-static int parse_port_list(const char *value, int *ports, int max_ports)
+static int parse_port_list(const char *value,
+                           int *ports,
+                           int max_ports)
 {
     char buffer[256];
     char *cursor;
     char *token;
     int count = 0;
 
-    if (strlen(value) >= sizeof(buffer)) {
+    if (strlen(value) >= sizeof(buffer))
+    {
         return -1;
     }
     strcpy(buffer, value);
     cursor = buffer;
-    while ((token = strsep(&cursor, ",")) != NULL) {
+    while ((token = strsep(&cursor, ",")) != NULL)
+    {
         char *end;
         long port;
 
-        if (*token == '\0' || count >= max_ports) {
+        if (*token == '\0' || count >= max_ports)
+        {
             return -1;
         }
         errno = 0;
         port = strtol(token, &end, 10);
-        if (errno != 0 || *end != '\0' || port < 1 || port > 65535) {
+        if (errno != 0 || *end != '\0' || port < 1
+            || port > 65535)
+        {
             return -1;
         }
         ports[count++] = (int)port;
@@ -154,873 +182,1124 @@ static int parse_port_list(const char *value, int *ports, int max_ports)
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
+    if (argc < 2)
+    {
         print_usage();
         return 0;
     }
 
-    if (handle_ddos_easter_egg(argc, argv)) {
+    if (handle_ddos_easter_egg(argc, argv))
+    {
         return 0;
     }
 
     cli_args_t *args = malloc(sizeof(cli_args_t));
-    if (!args) {
+    if (!args)
+    {
         fprintf(stderr, "Failed to allocate memory\n");
         return 1;
     }
 
-    if (parse_args(argc, argv, args) < 0) {
+    if (parse_args(argc, argv, args) < 0)
+    {
         free(args);
         return 1;
     }
 
-    switch (args->cmd) {
-        case CMD_LIST_INTERFACES: {
-            interface_stats_t *stats;
-            int count;
-
-            if (list_interfaces(&stats, &count) < 0) {
-                fprintf(stderr, "Failed to list interfaces\n");
-                free(args);
-                return 1;
-            }
-
-            printf("Network Interfaces:\n\n");
-            for (int i = 0; i < count; i++) {
-                print_interface_stats(&stats[i]);
-                printf("\n");
-            }
-
-            free_interface_stats(stats, count);
-            break;
-        }
-
-        case CMD_SHOW_STATS: {
-            interface_stats_t stats;
-
-            if (get_interface_stats(args->interface, &stats) < 0) {
-                fprintf(stderr, "Failed to get interface statistics\n");
-                free(args);
-                return 1;
-            }
-
-            strncpy(stats.name, args->interface, 255);
-            print_interface_stats(&stats);
-            break;
-        }
-
-        case CMD_CAPTURE:
-            if (start_capture(args->interface, args->filter, args->packet_count, args->promisc) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_TCP_STRESS: {
-            stress_config_t config;
-            stress_result_t result;
-
-            config.host = args->host;
-            config.port = args->port;
-            config.concurrency = args->concurrency;
-            config.duration_sec = args->duration;
-            config.rate_limit = args->rate_limit;
-            config.is_http = 0;
-            config.http_path = NULL;
-
-            if (run_tcp_stress(&config, &result) < 0) {
-                free(args);
-                return 1;
-            }
-
-            if (args->json_output) {
-                print_stress_json(&result);
-            } else {
-                print_stress_results(&result);
-            }
-            break;
-        }
-
-        case CMD_HTTP_STRESS: {
-            stress_config_t config;
-            stress_result_t result;
-
-            config.host = args->host;
-            config.port = args->port;
-            config.concurrency = args->concurrency;
-            config.duration_sec = args->duration;
-            config.rate_limit = args->rate_limit;
-            config.is_http = 1;
-            config.http_path = strlen(args->http_path) > 0 ? args->http_path : "/";
-
-            if (run_http_stress(&config, &result) < 0) {
-                free(args);
-                return 1;
-            }
-
-            if (args->json_output) {
-                print_stress_json(&result);
-            } else {
-                print_stress_results(&result);
-            }
-            break;
-        }
-
-        case CMD_PACKET_FLOOD:
-            if (packet_flood(args->interface, args->host, args->port, args->duration, args->rate_limit) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_PORT_SCAN:
-            if (scan_ports(args->host, args->start_port, args->end_port, args->timeout) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_VULN_SCAN:
-            if (detect_vulnerabilities(args->host, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SCAN_PROCESSES:
-            if (scan_network_processes(args->process_filter, args->pid_filter) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DNS_LOOKUP: {
-            dns_lookup_result_t dns_result;
-            if (dns_lookup(args->hostname, &dns_result) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_DNS_REVERSE: {
-            char hostname[256];
-            if (dns_reverse_lookup(args->ip_address, hostname, sizeof(hostname)) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_DNS_QUERY: {
-            char result[512];
-            if (dns_query(args->hostname, args->record_type, result, sizeof(result)) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_DNS_SERVER_TEST: {
-            dns_server_test_result_t dns_server_result;
-            if (dns_server_test(args->dns_server, &dns_server_result) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_DNS_TRACE:
-            if (dns_trace(args->hostname) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DNS_CACHE_FLUSH:
-            if (dns_cache_flush() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_TRACEROUTE: {
-            traceroute_result_t trace_result;
-            if (traceroute(args->hostname, &trace_result) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_TRACEROUTE_TCP: {
-            traceroute_result_t trace_result;
-            if (traceroute_tcp(args->hostname, args->port, &trace_result) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_TRACEROUTE_UDP: {
-            traceroute_result_t trace_result;
-            if (traceroute_udp(args->hostname, &trace_result) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_PING: {
-            ping_result_t ping_result;
-            if (ping(args->hostname, args->count, &ping_result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_ping_results(&ping_result);
-            break;
-        }
-
-        case CMD_PING_TCP: {
-            ping_result_t ping_result;
-            if (ping_tcp(args->hostname, args->port, &ping_result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_ping_results(&ping_result);
-            break;
-        }
-
-        case CMD_PING_UDP: {
-            ping_result_t ping_result;
-            if (ping_udp(args->hostname, args->port, &ping_result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_ping_results(&ping_result);
-            break;
-        }
-
-        case CMD_PING_SWEEP:
-            if (ping_sweep(args->domain, args->start_port, args->end_port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_PING_FLOOD:
-            if (ping_flood(args->hostname, args->duration) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DNS_BRUTEFORCE:
-            if (dns_bruteforce(args->domain, args->wordlist) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DNS_ZONE_TRANSFER:
-            if (dns_zone_transfer(args->domain, args->dns_server) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DNSSEC_VERIFY:
-            if (dnssec_verify(args->domain) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_TRACEROUTE_ICMP: {
-            traceroute_result_t trace_result;
-            if (traceroute_icmp(args->hostname, &trace_result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_traceroute_results(&trace_result);
-            break;
-        }
-
-        case CMD_NETWORK_SCAN:
-        case CMD_UDP_SCAN:
-        case CMD_SYN_SCAN:
-        case CMD_FIN_SCAN:
-        case CMD_XMAS_SCAN:
-        case CMD_NULL_SCAN:
-            if (run_scan_variant(args) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SCAN: {
-            scan_result_t *scan_result = calloc(1, sizeof(*scan_result));
-            if (!scan_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (port_scan(args->host, args->start_port, args->end_port, scan_result) < 0) {
-                free(scan_result);
-                free(args);
-                return 1;
-            }
-            print_scan_results(scan_result);
-            free(scan_result);
-            break;
-        }
-
-        case CMD_SERVICE_SCAN: {
-            char service[256];
-            if (service_scan(args->hostname, args->port, service, sizeof(service)) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_OS_FINGERPRINT: {
-            char os[256];
-            if (os_fingerprint(args->hostname, os, sizeof(os)) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_NETSTAT_PROCESS: {
-            netstat_result_t result;
-            memset(&result, 0, sizeof(result));
-            if (netstat_process(args->pid_filter, &result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_netstat_results(&result);
-            break;
-        }
-
-        case CMD_NETSTAT_INTERFACE:
-            if (netstat_interface(args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_NETSTAT_GROUP:
-            if (netstat_group(args->rule) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_NETSTAT_TIMER:
-            if (netstat_timer() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_NETSTAT: {
-            netstat_result_t *netstat_result = calloc(1, sizeof(*netstat_result));
-            if (!netstat_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (netstat_connections(netstat_result) < 0) {
-                free(netstat_result);
-                free(args);
-                return 1;
-            }
-            print_netstat_results(netstat_result);
-            free(netstat_result);
-            break;
-        }
-
-        case CMD_NETSTAT_LISTENING: {
-            netstat_result_t *netstat_result = calloc(1, sizeof(*netstat_result));
-            if (!netstat_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (netstat_listening(netstat_result) < 0) {
-                free(netstat_result);
-                free(args);
-                return 1;
-            }
-            free(netstat_result);
-            break;
-        }
-
-        case CMD_NETSTAT_ROUTE:
-            if (netstat_route() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_TABLE: {
-            arp_table_t *arp_tbl = calloc(1, sizeof(*arp_tbl));
-            if (!arp_tbl) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (arp_table(arp_tbl) < 0) {
-                free(arp_tbl);
-                free(args);
-                return 1;
-            }
-            free(arp_tbl);
-            break;
-        }
-
-        case CMD_ARP_SCAN: {
-            arp_table_t *arp_tbl = calloc(1, sizeof(*arp_tbl));
-            if (!arp_tbl) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (arp_scan(args->domain, arp_tbl) < 0) {
-                free(arp_tbl);
-                free(args);
-                return 1;
-            }
-            free(arp_tbl);
-            break;
-        }
-
-        case CMD_ARP_FLUSH:
-            if (arp_flush(args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ROUTE_TABLE: {
-            route_table_t *route_tbl = calloc(1, sizeof(*route_tbl));
-            if (!route_tbl) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (route_table(route_tbl) < 0) {
-                free(route_tbl);
-                free(args);
-                return 1;
-            }
-            free(route_tbl);
-            break;
-        }
-
-        case CMD_ROUTE_ADD:
-            if (route_add(args->host, args->gateway, args->netmask, args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ROUTE_DELETE:
-            if (route_delete(args->host) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ROUTE_GET: {
-            route_entry_t route;
-            memset(&route, 0, sizeof(route));
-            if (route_get(args->host, &route) < 0) {
-                free(args);
-                return 1;
-            }
-            printf("Destination: %s\nGateway: %s\nNetmask: %s\nInterface: %s\n",
-                   route.destination, route.gateway, route.netmask, route.interface);
-            break;
-        }
-
-        case CMD_ROUTE_TRACE:
-            if (route_trace(args->host) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ROUTE_MONITOR:
-            if (route_monitor() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_SPOOF_DETECT:
-            if (arp_spoof_detect(args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_REQUEST:
-            if (arp_request(args->interface, args->ip_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_REPLY:
-            if (arp_reply(args->interface, args->ip_address, args->mac_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_CACHE_ADD:
-            if (arp_cache_add(args->interface, args->ip_address, args->mac_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_ARP_CACHE_DELETE:
-            if (arp_cache_delete(args->ip_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_LIST: {
-            firewall_ruleset_t *ruleset = calloc(1, sizeof(*ruleset));
-            if (!ruleset) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (firewall_list(ruleset) < 0) {
-                free(ruleset);
-                free(args);
-                return 1;
-            }
-            free(ruleset);
-            break;
-        }
-
-        case CMD_FIREWALL_ADD:
-            if (firewall_add(args->chain, args->rule) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_DELETE:
-            if (firewall_delete(args->chain, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_FLUSH:
-            if (firewall_flush(args->chain) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_BLOCK_IP:
-            if (firewall_block_ip(args->ip_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_UNBLOCK_IP:
-            if (firewall_unblock_ip(args->ip_address) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_BLOCK_PORT:
-            if (firewall_block_port(args->port, args->protocol) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_UNBLOCK_PORT:
-            if (firewall_unblock_port(args->port, args->protocol) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_STATUS:
-            if (firewall_status() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_FIREWALL_LOG:
-            if (firewall_log(args->count) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_BANDWIDTH_TEST: {
-            bandwidth_result_t bw_result;
-            if (bandwidth_test(args->interface, &bw_result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_bandwidth_results(&bw_result);
-            break;
-        }
-
-        case CMD_BANDWIDTH_MONITOR:
-            if (bandwidth_monitor(args->interface, args->interval) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_BANDWIDTH_SPEEDTEST: {
-            bandwidth_result_t result;
-            memset(&result, 0, sizeof(result));
-            if (bandwidth_speedtest(args->host, &result) < 0) {
-                free(args);
-                return 1;
-            }
-            print_bandwidth_results(&result);
-            break;
-        }
-
-        case CMD_BANDWIDTH_HISTORY:
-            if (bandwidth_history(args->interface, args->duration) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_BANDWIDTH_LIMIT:
-            if (bandwidth_limit(args->interface, args->max_bps) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_BANDWIDTH_SHAPER:
-            if (bandwidth_shaper(args->interface, args->download_bps, args->upload_bps) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_MONITOR_START:
-            if (monitor_start(args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_MONITOR_ALERT:
-            if (monitor_alert(args->interface, args->threshold) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_MONITOR_STOP:
-            if (monitor_stop() < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_MONITOR_STATUS: {
-            monitor_snapshot_t snapshot;
-            memset(&snapshot, 0, sizeof(snapshot));
-            if (monitor_status(&snapshot) < 0) {
-                free(args);
-                return 1;
-            }
-            print_monitor_status(&snapshot);
-            break;
-        }
-
-        case CMD_MONITOR_LOG:
-            if (monitor_log(args->interface, args->log_path) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_MONITOR_EXPORT:
-            if (monitor_export(args->interface, args->export_path) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_DISCOVERY_PING: {
-            discovery_result_t *disc_result = calloc(1, sizeof(*disc_result));
-            if (!disc_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (discovery_ping(args->domain, disc_result) < 0) {
-                free(disc_result);
-                free(args);
-                return 1;
-            }
-            free(disc_result);
-            break;
-        }
-
-        case CMD_DISCOVERY_ARP: {
-            discovery_result_t *disc_result = calloc(1, sizeof(*disc_result));
-            if (!disc_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (discovery_arp(args->domain, disc_result) < 0) {
-                free(disc_result);
-                free(args);
-                return 1;
-            }
-            free(disc_result);
-            break;
-        }
-
-        case CMD_DISCOVERY_DNS:
-        case CMD_DISCOVERY_SNMP:
-        case CMD_DISCOVERY_UPNP:
-        case CMD_DISCOVERY_MDNS:
-        case CMD_DISCOVERY_LLMNR:
-        case CMD_DISCOVERY_NETBIOS:
-        case CMD_DISCOVERY_SMB:
-        case CMD_DISCOVERY_HTTP:
-        case CMD_DISCOVERY_SSL:
-            if (run_discovery_variant(args) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_SCAN: {
-            security_scan_result_t *sec_result = calloc(1, sizeof(*sec_result));
-            if (!sec_result) {
-                fprintf(stderr, "Failed to allocate memory\n");
-                free(args);
-                return 1;
-            }
-
-            if (security_scan(args->hostname, sec_result) < 0) {
-                free(sec_result);
-                free(args);
-                return 1;
-            }
-            free(sec_result);
-            break;
-        }
-
-        case CMD_SECURITY_AUDIT:
-            if (security_audit(args->hostname) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_SSL:
-            if (security_ssl_check(args->hostname, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_SSH:
-            if (security_ssh_check(args->hostname, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_HTTP:
-            if (security_http_check(args->hostname, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_SMTP:
-            if (security_smtp_check(args->hostname, args->port) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_BANNER: {
-            char banner[512];
-            if (security_banner_grab(args->hostname, args->port, banner, sizeof(banner)) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_SECURITY_DNS:
-            if (security_dns_check(args->dns_server) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_MITM_DETECT:
-            if (security_mitm_detect(args->interface) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        case CMD_SECURITY_PORT_KNOCKING: {
-            int ports[32];
-            int port_count = parse_port_list(args->rule, ports, 32);
-            if (port_count < 0 || security_port_knocking(args->host, ports, port_count) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-        }
-
-        case CMD_SECURITY_HONEYPOT_DETECT:
-            if (security_honeypot_detect(args->host) < 0) {
-                free(args);
-                return 1;
-            }
-            break;
-
-        default:
-            fprintf(stderr, "Unknown command\n");
+    switch (args->cmd)
+    {
+    case CMD_LIST_INTERFACES:
+    {
+        interface_stats_t *stats;
+        int count;
+
+        if (list_interfaces(&stats, &count) < 0)
+        {
+            fprintf(stderr, "Failed to list interfaces\n");
             free(args);
             return 1;
+        }
+
+        printf("Network Interfaces:\n\n");
+        for (int i = 0; i < count; i++)
+        {
+            print_interface_stats(&stats[i]);
+            printf("\n");
+        }
+
+        free_interface_stats(stats, count);
+        break;
+    }
+
+    case CMD_SHOW_STATS:
+    {
+        interface_stats_t stats;
+
+        if (get_interface_stats(args->interface, &stats)
+            < 0)
+        {
+            fprintf(stderr,
+                    "Failed to get interface statistics\n");
+            free(args);
+            return 1;
+        }
+
+        strncpy(stats.name, args->interface, 255);
+        print_interface_stats(&stats);
+        break;
+    }
+
+    case CMD_CAPTURE:
+        if (start_capture(args->interface,
+                          args->filter,
+                          args->packet_count,
+                          args->promisc)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_TCP_STRESS:
+    {
+        stress_config_t config;
+        stress_result_t result;
+
+        config.host = args->host;
+        config.port = args->port;
+        config.concurrency = args->concurrency;
+        config.duration_sec = args->duration;
+        config.rate_limit = args->rate_limit;
+        config.is_http = 0;
+        config.http_path = NULL;
+
+        if (run_tcp_stress(&config, &result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+
+        if (args->json_output)
+        {
+            print_stress_json(&result);
+        }
+        else
+        {
+            print_stress_results(&result);
+        }
+        break;
+    }
+
+    case CMD_HTTP_STRESS:
+    {
+        stress_config_t config;
+        stress_result_t result;
+
+        config.host = args->host;
+        config.port = args->port;
+        config.concurrency = args->concurrency;
+        config.duration_sec = args->duration;
+        config.rate_limit = args->rate_limit;
+        config.is_http = 1;
+        config.http_path = strlen(args->http_path) > 0
+                               ? args->http_path
+                               : "/";
+
+        if (run_http_stress(&config, &result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+
+        if (args->json_output)
+        {
+            print_stress_json(&result);
+        }
+        else
+        {
+            print_stress_results(&result);
+        }
+        break;
+    }
+
+    case CMD_PACKET_FLOOD:
+        if (packet_flood(args->interface,
+                         args->host,
+                         args->port,
+                         args->duration,
+                         args->rate_limit)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_PORT_SCAN:
+        if (scan_ports(args->host,
+                       args->start_port,
+                       args->end_port,
+                       args->timeout)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_VULN_SCAN:
+        if (detect_vulnerabilities(args->host, args->port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SCAN_PROCESSES:
+        if (scan_network_processes(args->process_filter,
+                                   args->pid_filter)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DNS_LOOKUP:
+    {
+        dns_lookup_result_t dns_result;
+        if (dns_lookup(args->hostname, &dns_result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_DNS_REVERSE:
+    {
+        char hostname[256];
+        if (dns_reverse_lookup(args->ip_address,
+                               hostname,
+                               sizeof(hostname))
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_DNS_QUERY:
+    {
+        char result[512];
+        if (dns_query(args->hostname,
+                      args->record_type,
+                      result,
+                      sizeof(result))
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_DNS_SERVER_TEST:
+    {
+        dns_server_test_result_t dns_server_result;
+        if (dns_server_test(args->dns_server,
+                            &dns_server_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_DNS_TRACE:
+        if (dns_trace(args->hostname) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DNS_CACHE_FLUSH:
+        if (dns_cache_flush() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_TRACEROUTE:
+    {
+        traceroute_result_t trace_result;
+        if (traceroute(args->hostname, &trace_result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_TRACEROUTE_TCP:
+    {
+        traceroute_result_t trace_result;
+        if (traceroute_tcp(args->hostname,
+                           args->port,
+                           &trace_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_TRACEROUTE_UDP:
+    {
+        traceroute_result_t trace_result;
+        if (traceroute_udp(args->hostname, &trace_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_PING:
+    {
+        ping_result_t ping_result;
+        if (ping(args->hostname, args->count, &ping_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_ping_results(&ping_result);
+        break;
+    }
+
+    case CMD_PING_TCP:
+    {
+        ping_result_t ping_result;
+        if (ping_tcp(args->hostname,
+                     args->port,
+                     &ping_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_ping_results(&ping_result);
+        break;
+    }
+
+    case CMD_PING_UDP:
+    {
+        ping_result_t ping_result;
+        if (ping_udp(args->hostname,
+                     args->port,
+                     &ping_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_ping_results(&ping_result);
+        break;
+    }
+
+    case CMD_PING_SWEEP:
+        if (ping_sweep(args->domain,
+                       args->start_port,
+                       args->end_port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_PING_FLOOD:
+        if (ping_flood(args->hostname, args->duration) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DNS_BRUTEFORCE:
+        if (dns_bruteforce(args->domain, args->wordlist)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DNS_ZONE_TRANSFER:
+        if (dns_zone_transfer(args->domain,
+                              args->dns_server)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DNSSEC_VERIFY:
+        if (dnssec_verify(args->domain) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_TRACEROUTE_ICMP:
+    {
+        traceroute_result_t trace_result;
+        if (traceroute_icmp(args->hostname, &trace_result)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_traceroute_results(&trace_result);
+        break;
+    }
+
+    case CMD_NETWORK_SCAN:
+    case CMD_UDP_SCAN:
+    case CMD_SYN_SCAN:
+    case CMD_FIN_SCAN:
+    case CMD_XMAS_SCAN:
+    case CMD_NULL_SCAN:
+        if (run_scan_variant(args) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SCAN:
+    {
+        scan_result_t *scan_result =
+            calloc(1, sizeof(*scan_result));
+        if (!scan_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (port_scan(args->host,
+                      args->start_port,
+                      args->end_port,
+                      scan_result)
+            < 0)
+        {
+            free(scan_result);
+            free(args);
+            return 1;
+        }
+        print_scan_results(scan_result);
+        free(scan_result);
+        break;
+    }
+
+    case CMD_SERVICE_SCAN:
+    {
+        char service[256];
+        if (service_scan(args->hostname,
+                         args->port,
+                         service,
+                         sizeof(service))
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_OS_FINGERPRINT:
+    {
+        char os[256];
+        if (os_fingerprint(args->hostname, os, sizeof(os))
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_NETSTAT_PROCESS:
+    {
+        netstat_result_t result;
+        memset(&result, 0, sizeof(result));
+        if (netstat_process(args->pid_filter, &result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_netstat_results(&result);
+        break;
+    }
+
+    case CMD_NETSTAT_INTERFACE:
+        if (netstat_interface(args->interface) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_NETSTAT_GROUP:
+        if (netstat_group(args->rule) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_NETSTAT_TIMER:
+        if (netstat_timer() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_NETSTAT:
+    {
+        netstat_result_t *netstat_result =
+            calloc(1, sizeof(*netstat_result));
+        if (!netstat_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (netstat_connections(netstat_result) < 0)
+        {
+            free(netstat_result);
+            free(args);
+            return 1;
+        }
+        print_netstat_results(netstat_result);
+        free(netstat_result);
+        break;
+    }
+
+    case CMD_NETSTAT_LISTENING:
+    {
+        netstat_result_t *netstat_result =
+            calloc(1, sizeof(*netstat_result));
+        if (!netstat_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (netstat_listening(netstat_result) < 0)
+        {
+            free(netstat_result);
+            free(args);
+            return 1;
+        }
+        free(netstat_result);
+        break;
+    }
+
+    case CMD_NETSTAT_ROUTE:
+        if (netstat_route() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_TABLE:
+    {
+        arp_table_t *arp_tbl = calloc(1, sizeof(*arp_tbl));
+        if (!arp_tbl)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (arp_table(arp_tbl) < 0)
+        {
+            free(arp_tbl);
+            free(args);
+            return 1;
+        }
+        free(arp_tbl);
+        break;
+    }
+
+    case CMD_ARP_SCAN:
+    {
+        arp_table_t *arp_tbl = calloc(1, sizeof(*arp_tbl));
+        if (!arp_tbl)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (arp_scan(args->domain, arp_tbl) < 0)
+        {
+            free(arp_tbl);
+            free(args);
+            return 1;
+        }
+        free(arp_tbl);
+        break;
+    }
+
+    case CMD_ARP_FLUSH:
+        if (arp_flush(args->interface) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ROUTE_TABLE:
+    {
+        route_table_t *route_tbl =
+            calloc(1, sizeof(*route_tbl));
+        if (!route_tbl)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (route_table(route_tbl) < 0)
+        {
+            free(route_tbl);
+            free(args);
+            return 1;
+        }
+        free(route_tbl);
+        break;
+    }
+
+    case CMD_ROUTE_ADD:
+        if (route_add(args->host,
+                      args->gateway,
+                      args->netmask,
+                      args->interface)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ROUTE_DELETE:
+        if (route_delete(args->host) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ROUTE_GET:
+    {
+        route_entry_t route;
+        memset(&route, 0, sizeof(route));
+        if (route_get(args->host, &route) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        printf("Destination: %s\nGateway: %s\nNetmask: "
+               "%s\nInterface: %s\n",
+               route.destination,
+               route.gateway,
+               route.netmask,
+               route.interface);
+        break;
+    }
+
+    case CMD_ROUTE_TRACE:
+        if (route_trace(args->host) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ROUTE_MONITOR:
+        if (route_monitor() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_SPOOF_DETECT:
+        if (arp_spoof_detect(args->interface) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_REQUEST:
+        if (arp_request(args->interface, args->ip_address)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_REPLY:
+        if (arp_reply(args->interface,
+                      args->ip_address,
+                      args->mac_address)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_CACHE_ADD:
+        if (arp_cache_add(args->interface,
+                          args->ip_address,
+                          args->mac_address)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_ARP_CACHE_DELETE:
+        if (arp_cache_delete(args->ip_address) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_LIST:
+    {
+        firewall_ruleset_t *ruleset =
+            calloc(1, sizeof(*ruleset));
+        if (!ruleset)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (firewall_list(ruleset) < 0)
+        {
+            free(ruleset);
+            free(args);
+            return 1;
+        }
+        free(ruleset);
+        break;
+    }
+
+    case CMD_FIREWALL_ADD:
+        if (firewall_add(args->chain, args->rule) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_DELETE:
+        if (firewall_delete(args->chain, args->port) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_FLUSH:
+        if (firewall_flush(args->chain) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_BLOCK_IP:
+        if (firewall_block_ip(args->ip_address) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_UNBLOCK_IP:
+        if (firewall_unblock_ip(args->ip_address) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_BLOCK_PORT:
+        if (firewall_block_port(args->port, args->protocol)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_UNBLOCK_PORT:
+        if (firewall_unblock_port(args->port,
+                                  args->protocol)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_STATUS:
+        if (firewall_status() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_FIREWALL_LOG:
+        if (firewall_log(args->count) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_BANDWIDTH_TEST:
+    {
+        bandwidth_result_t bw_result;
+        if (bandwidth_test(args->interface, &bw_result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_bandwidth_results(&bw_result);
+        break;
+    }
+
+    case CMD_BANDWIDTH_MONITOR:
+        if (bandwidth_monitor(args->interface,
+                              args->interval)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_BANDWIDTH_SPEEDTEST:
+    {
+        bandwidth_result_t result;
+        memset(&result, 0, sizeof(result));
+        if (bandwidth_speedtest(args->host, &result) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_bandwidth_results(&result);
+        break;
+    }
+
+    case CMD_BANDWIDTH_HISTORY:
+        if (bandwidth_history(args->interface,
+                              args->duration)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_BANDWIDTH_LIMIT:
+        if (bandwidth_limit(args->interface, args->max_bps)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_BANDWIDTH_SHAPER:
+        if (bandwidth_shaper(args->interface,
+                             args->download_bps,
+                             args->upload_bps)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_MONITOR_START:
+        if (monitor_start(args->interface) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_MONITOR_ALERT:
+        if (monitor_alert(args->interface, args->threshold)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_MONITOR_STOP:
+        if (monitor_stop() < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_MONITOR_STATUS:
+    {
+        monitor_snapshot_t snapshot;
+        memset(&snapshot, 0, sizeof(snapshot));
+        if (monitor_status(&snapshot) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        print_monitor_status(&snapshot);
+        break;
+    }
+
+    case CMD_MONITOR_LOG:
+        if (monitor_log(args->interface, args->log_path)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_MONITOR_EXPORT:
+        if (monitor_export(args->interface,
+                           args->export_path)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_DISCOVERY_PING:
+    {
+        discovery_result_t *disc_result =
+            calloc(1, sizeof(*disc_result));
+        if (!disc_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (discovery_ping(args->domain, disc_result) < 0)
+        {
+            free(disc_result);
+            free(args);
+            return 1;
+        }
+        free(disc_result);
+        break;
+    }
+
+    case CMD_DISCOVERY_ARP:
+    {
+        discovery_result_t *disc_result =
+            calloc(1, sizeof(*disc_result));
+        if (!disc_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (discovery_arp(args->domain, disc_result) < 0)
+        {
+            free(disc_result);
+            free(args);
+            return 1;
+        }
+        free(disc_result);
+        break;
+    }
+
+    case CMD_DISCOVERY_DNS:
+    case CMD_DISCOVERY_SNMP:
+    case CMD_DISCOVERY_UPNP:
+    case CMD_DISCOVERY_MDNS:
+    case CMD_DISCOVERY_LLMNR:
+    case CMD_DISCOVERY_NETBIOS:
+    case CMD_DISCOVERY_SMB:
+    case CMD_DISCOVERY_HTTP:
+    case CMD_DISCOVERY_SSL:
+        if (run_discovery_variant(args) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_SCAN:
+    {
+        security_scan_result_t *sec_result =
+            calloc(1, sizeof(*sec_result));
+        if (!sec_result)
+        {
+            fprintf(stderr, "Failed to allocate memory\n");
+            free(args);
+            return 1;
+        }
+
+        if (security_scan(args->hostname, sec_result) < 0)
+        {
+            free(sec_result);
+            free(args);
+            return 1;
+        }
+        free(sec_result);
+        break;
+    }
+
+    case CMD_SECURITY_AUDIT:
+        if (security_audit(args->hostname) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_SSL:
+        if (security_ssl_check(args->hostname, args->port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_SSH:
+        if (security_ssh_check(args->hostname, args->port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_HTTP:
+        if (security_http_check(args->hostname, args->port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_SMTP:
+        if (security_smtp_check(args->hostname, args->port)
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_BANNER:
+    {
+        char banner[512];
+        if (security_banner_grab(args->hostname,
+                                 args->port,
+                                 banner,
+                                 sizeof(banner))
+            < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_SECURITY_DNS:
+        if (security_dns_check(args->dns_server) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_MITM_DETECT:
+        if (security_mitm_detect(args->interface) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    case CMD_SECURITY_PORT_KNOCKING:
+    {
+        int ports[32];
+        int port_count =
+            parse_port_list(args->rule, ports, 32);
+        if (port_count < 0
+            || security_port_knocking(args->host,
+                                      ports,
+                                      port_count)
+                   < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+    }
+
+    case CMD_SECURITY_HONEYPOT_DETECT:
+        if (security_honeypot_detect(args->host) < 0)
+        {
+            free(args);
+            return 1;
+        }
+        break;
+
+    default:
+        fprintf(stderr, "Unknown command\n");
+        free(args);
+        return 1;
     }
 
     free(args);

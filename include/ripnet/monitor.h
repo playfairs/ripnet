@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct
+{
     char interface[32];
     uint64_t rx_packets;
     uint64_t tx_packets;
@@ -18,7 +19,8 @@ typedef struct {
     double packet_loss;
 } monitor_stats_t;
 
-typedef struct {
+typedef struct
+{
     monitor_stats_t current;
     monitor_stats_t previous;
     double cpu_usage;
@@ -29,9 +31,13 @@ typedef struct {
 int monitor_start(const char *interface);
 int monitor_stop(void);
 int monitor_status(monitor_snapshot_t *snapshot);
-int monitor_alert(const char *interface, double threshold_mbps);
-int monitor_log(const char *interface, const char *log_path);
-int monitor_export(const char *interface, const char *export_path);
-void print_monitor_status(const monitor_snapshot_t *snapshot);
+int monitor_alert(const char *interface,
+                  double threshold_mbps);
+int monitor_log(const char *interface,
+                const char *log_path);
+int monitor_export(const char *interface,
+                   const char *export_path);
+void print_monitor_status(
+    const monitor_snapshot_t *snapshot);
 
 #endif
