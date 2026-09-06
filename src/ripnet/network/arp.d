@@ -60,8 +60,8 @@ public int add(string ip, string mac, string interfaceName)
 {
     version (linux)
         return run("ip", [
-            "neigh", "replace", ip, "lladdr", mac, "nud", "permanent", "dev",
-            interfaceName
+        "neigh", "replace", ip, "lladdr", mac, "nud", "permanent", "dev",
+        interfaceName
     ]).status;
     return -1;
 }

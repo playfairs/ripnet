@@ -56,8 +56,7 @@ public int unblockPort(ushort port, string protocol)
 {
     version (linux)
         return run("iptables", [
-            "-D", "INPUT", "-p", protocol, "--dport", to!string(port), "-j",
-            "DROP"
+        "-D", "INPUT", "-p", protocol, "--dport", to!string(port), "-j", "DROP"
     ]).status;
     return -1;
 }
