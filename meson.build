@@ -1,7 +1,7 @@
 project(
   'ripnet',
   'c',
-  version: import('fs').read('VERSION').strip(),
+  version: run_command('cat', 'VERSION', check: true).stdout().strip(),
   default_options: [
     'c_std=c17',
     'warning_level=3',
@@ -50,7 +50,7 @@ ripnet_executable = executable(
   ripnet_sources,
   include_directories: [
     include_directories('include'),
-    include_directories(meson.current_build_dir()),
+    include_directories('.'),
   ],
   dependencies: [
     dependency('libpcap'),
