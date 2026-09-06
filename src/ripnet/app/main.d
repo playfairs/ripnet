@@ -280,7 +280,7 @@ int main(string[] args)
         printCommandError(options.command, "operation is not available");
         return -1;
     case Command.ddos:
-        writeln("ddos: that's very minimalist of you.");
+        writeln("ripnet: that's very minimalist of you.");
         return 0;
     case Command.help:
     case Command.showVersion:
