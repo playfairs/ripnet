@@ -132,10 +132,16 @@ public ParseResult parseArgs(string[] args)
     CliOptions options;
     auto known = commands;
     string[] positional;
+    bool endOfOptions;
     for (size_t index = 1; index < args.length; ++index)
     {
         auto token = args[index];
-        if (!token.startsWith("--"))
+        if (token == "--")
+        {
+            endOfOptions = true;
+            continue;
+        }
+        if (endOfOptions || !token.startsWith("--"))
         {
             positional ~= token;
             continue;
@@ -150,7 +156,12 @@ public ParseResult parseArgs(string[] args)
         }
         if (option == "help" || option == "h")
         {
-            options.command = Command.help;
+            options.showHelp = true;
+            continue;
+        }
+        if (option == "version")
+        {
+            options.command = Command.showVersion;
             continue;
         }
         if (option == "json")
@@ -168,11 +179,6 @@ public ParseResult parseArgs(string[] args)
             options.promisc = true;
             continue;
         }
-        if (option in known)
-        {
-            options.command = known[option];
-            continue;
-        }
         if (!needsValue(option))
             return ParseResult(options, "unknown option --" ~ option, false);
         if (value.length == 0 && index + 1 < args.length)
@@ -184,6 +190,11 @@ public ParseResult parseArgs(string[] args)
             return ParseResult(options, error, false);
     }
     options.positional = positional;
+    if (positional.length && positional[0] in known)
+    {
+        options.command = known[positional[0]];
+        positional = positional[1 .. $];
+    }
     if (!options.host.length && positional.length)
         options.host = positional[0];
     if (!options.hostname.length)
@@ -307,16 +318,16 @@ public void printUsage()
     import std.stdio : writeln;
 
     writeln("ripnet - network diagnostics and authorized load testing");
-    writeln("Usage: ripnet [command] [options]");
+    writeln("Usage: ripnet <command> [arguments] [flags]");
     writeln("\nCore commands:");
-    writeln("  --list-interfaces       list network interfaces");
-    writeln("  --show-stats            show interface counters");
-    writeln("  --ping HOST             send a reachability probe");
-    writeln("  --scan HOST             scan a TCP port range");
-    writeln("  --service-scan HOST     identify an open service");
-    writeln("  --dns-lookup HOST       resolve a hostname");
-    writeln("  --capture               capture packets with libpcap");
-    writeln("  --help                  show this help");
+    writeln("  list-interfaces         list network interfaces");
+    writeln("  show-stats              show interface counters");
+    writeln("  ping HOST               send a reachability probe");
+    writeln("  scan HOST               scan a TCP port range");
+    writeln("  service-scan HOST       identify an open service");
+    writeln("  dns-lookup HOST         resolve a hostname");
+    writeln("  capture                 capture packets with libpcap");
+    writeln("  --help                  show help for the selected command");
     writeln("\nOptions: --port N --start-port N --end-port N --timeout MS --count N");
     writeln("         --interface NAME --json --verbose");
 }

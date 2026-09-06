@@ -107,6 +107,7 @@ public enum Command
 public struct CliOptions
 {
     Command command = Command.help;
+    bool showHelp;
     string interfaceName;
     string filter;
     string host;

@@ -30,7 +30,7 @@ int main(string[] args)
         return 2;
     }
     auto options = parsed.options;
-    if (options.command == Command.help)
+    if (options.command == Command.help || options.showHelp)
     {
         printUsage();
         return 0;
