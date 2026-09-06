@@ -8,6 +8,13 @@ project(
   ],
 )
 
+version_config = configuration_data()
+version_config.set_quoted('RIPNET_VERSION', meson.project_version())
+version_header = configure_file(
+  output: 'ripnet_version.h',
+  configuration: version_config,
+)
+
 ripnet_sources = files(
   'src/arp.c',
   'src/bandwidth.c',
@@ -38,13 +45,19 @@ add_project_arguments(
   language: 'c',
 )
 
-executable(
+ripnet_executable = executable(
   'ripnet',
   ripnet_sources,
-  include_directories: include_directories('include'),
+  include_directories: [
+    include_directories('include'),
+    include_directories(meson.current_build_dir()),
+  ],
   dependencies: [
     dependency('libpcap'),
     dependency('threads'),
   ],
   install: true,
 )
+
+test('cli-help', ripnet_executable, args: ['--help'])
+test('network-scan-dispatch', ripnet_executable, args: ['--network-scan', '192.0.2.0/30'])

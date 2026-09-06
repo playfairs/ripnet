@@ -2,7 +2,7 @@
 
 stdenv.mkDerivation {
   pname = "ripnet";
-  version = "1.0.0";
+  version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
 
   src = ./.;
 

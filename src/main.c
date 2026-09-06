@@ -16,17 +16,140 @@
 #include "ripnet/discovery.h"
 #include "ripnet/security.h"
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
 static int handle_ddos_easter_egg(int argc, char **argv)
 {
-    if (argc < 2 || strcmp(argv[1], "ddos") != 0) {
+    if (argc < 2 || strcmp(argv[1], "ddos") != 0)
+    {
         return 0;
     }
 
-    printf("ddos: that's not very diagnostic of you.\n");
+    printf("ddos: that's very minimalist of you.\n");
     return 1;
+}
+
+static int run_scan_variant(const cli_args_t *args)
+{
+    scan_result_t *result;
+    int scan_result;
+
+    result = calloc(1, sizeof(*result));
+    if (!result) {
+        return -1;
+    }
+    switch (args->cmd) {
+        case CMD_NETWORK_SCAN:
+            scan_result = network_scan(args->domain, result);
+            break;
+        case CMD_UDP_SCAN:
+            scan_result = udp_scan(args->host, args->start_port, args->end_port, result);
+            break;
+        case CMD_SYN_SCAN:
+            scan_result = syn_scan(args->host, args->start_port, args->end_port, result);
+            break;
+        case CMD_FIN_SCAN:
+            scan_result = fin_scan(args->host, args->start_port, args->end_port, result);
+            break;
+        case CMD_XMAS_SCAN:
+            scan_result = xmas_scan(args->host, args->start_port, args->end_port, result);
+            break;
+        case CMD_NULL_SCAN:
+            scan_result = null_scan(args->host, args->start_port, args->end_port, result);
+            break;
+        default:
+            free(result);
+            return -1;
+    }
+
+    if (scan_result < 0) {
+        free(result);
+        return -1;
+    }
+    print_scan_results(result);
+    free(result);
+    return 0;
+}
+
+static int run_discovery_variant(const cli_args_t *args)
+{
+    discovery_result_t *result;
+    int (*discovery)(const char *, discovery_result_t *);
+
+    switch (args->cmd) {
+        case CMD_DISCOVERY_DNS:
+            discovery = discovery_dns;
+            break;
+        case CMD_DISCOVERY_SNMP:
+            discovery = discovery_snmp;
+            break;
+        case CMD_DISCOVERY_UPNP:
+            discovery = discovery_upnp;
+            break;
+        case CMD_DISCOVERY_MDNS:
+            discovery = discovery_mdns;
+            break;
+        case CMD_DISCOVERY_LLMNR:
+            discovery = discovery_llmnr;
+            break;
+        case CMD_DISCOVERY_NETBIOS:
+            discovery = discovery_netbios;
+            break;
+        case CMD_DISCOVERY_SMB:
+            discovery = discovery_smb;
+            break;
+        case CMD_DISCOVERY_HTTP:
+            discovery = discovery_http;
+            break;
+        case CMD_DISCOVERY_SSL:
+            discovery = discovery_ssl;
+            break;
+        default:
+            return -1;
+    }
+
+    result = calloc(1, sizeof(*result));
+    if (!result) {
+        return -1;
+    }
+    if (discovery(args->domain, result) < 0) {
+        free(result);
+        return -1;
+    }
+    print_discovery_results(result);
+    free(result);
+    return 0;
+}
+
+static int parse_port_list(const char *value, int *ports, int max_ports)
+{
+    char buffer[256];
+    char *cursor;
+    char *token;
+    int count = 0;
+
+    if (strlen(value) >= sizeof(buffer)) {
+        return -1;
+    }
+    strcpy(buffer, value);
+    cursor = buffer;
+    while ((token = strsep(&cursor, ",")) != NULL) {
+        char *end;
+        long port;
+
+        if (*token == '\0' || count >= max_ports) {
+            return -1;
+        }
+        errno = 0;
+        port = strtol(token, &end, 10);
+        if (errno != 0 || *end != '\0' || port < 1 || port > 65535) {
+            return -1;
+        }
+        ports[count++] = (int)port;
+    }
+    return count > 0 ? count : -1;
 }
 
 int main(int argc, char **argv)
@@ -268,6 +391,73 @@ int main(int argc, char **argv)
             break;
         }
 
+        case CMD_PING_UDP: {
+            ping_result_t ping_result;
+            if (ping_udp(args->hostname, args->port, &ping_result) < 0) {
+                free(args);
+                return 1;
+            }
+            print_ping_results(&ping_result);
+            break;
+        }
+
+        case CMD_PING_SWEEP:
+            if (ping_sweep(args->domain, args->start_port, args->end_port) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_PING_FLOOD:
+            if (ping_flood(args->hostname, args->duration) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_DNS_BRUTEFORCE:
+            if (dns_bruteforce(args->domain, args->wordlist) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_DNS_ZONE_TRANSFER:
+            if (dns_zone_transfer(args->domain, args->dns_server) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_DNSSEC_VERIFY:
+            if (dnssec_verify(args->domain) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_TRACEROUTE_ICMP: {
+            traceroute_result_t trace_result;
+            if (traceroute_icmp(args->hostname, &trace_result) < 0) {
+                free(args);
+                return 1;
+            }
+            print_traceroute_results(&trace_result);
+            break;
+        }
+
+        case CMD_NETWORK_SCAN:
+        case CMD_UDP_SCAN:
+        case CMD_SYN_SCAN:
+        case CMD_FIN_SCAN:
+        case CMD_XMAS_SCAN:
+        case CMD_NULL_SCAN:
+            if (run_scan_variant(args) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
         case CMD_SCAN: {
             scan_result_t *scan_result = calloc(1, sizeof(*scan_result));
             if (!scan_result) {
@@ -303,6 +493,38 @@ int main(int argc, char **argv)
             }
             break;
         }
+
+        case CMD_NETSTAT_PROCESS: {
+            netstat_result_t result;
+            memset(&result, 0, sizeof(result));
+            if (netstat_process(args->pid_filter, &result) < 0) {
+                free(args);
+                return 1;
+            }
+            print_netstat_results(&result);
+            break;
+        }
+
+        case CMD_NETSTAT_INTERFACE:
+            if (netstat_interface(args->interface) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_NETSTAT_GROUP:
+            if (netstat_group(args->rule) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_NETSTAT_TIMER:
+            if (netstat_timer() < 0) {
+                free(args);
+                return 1;
+            }
+            break;
 
         case CMD_NETSTAT: {
             netstat_result_t *netstat_result = calloc(1, sizeof(*netstat_result));
@@ -418,6 +640,67 @@ int main(int argc, char **argv)
             }
             break;
 
+        case CMD_ROUTE_GET: {
+            route_entry_t route;
+            memset(&route, 0, sizeof(route));
+            if (route_get(args->host, &route) < 0) {
+                free(args);
+                return 1;
+            }
+            printf("Destination: %s\nGateway: %s\nNetmask: %s\nInterface: %s\n",
+                   route.destination, route.gateway, route.netmask, route.interface);
+            break;
+        }
+
+        case CMD_ROUTE_TRACE:
+            if (route_trace(args->host) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ROUTE_MONITOR:
+            if (route_monitor() < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ARP_SPOOF_DETECT:
+            if (arp_spoof_detect(args->interface) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ARP_REQUEST:
+            if (arp_request(args->interface, args->ip_address) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ARP_REPLY:
+            if (arp_reply(args->interface, args->ip_address, args->mac_address) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ARP_CACHE_ADD:
+            if (arp_cache_add(args->interface, args->ip_address, args->mac_address) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_ARP_CACHE_DELETE:
+            if (arp_cache_delete(args->ip_address) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
         case CMD_FIREWALL_LIST: {
             firewall_ruleset_t *ruleset = calloc(1, sizeof(*ruleset));
             if (!ruleset) {
@@ -471,14 +754,28 @@ int main(int argc, char **argv)
             break;
 
         case CMD_FIREWALL_BLOCK_PORT:
-            if (firewall_block_port(args->port, "tcp") < 0) {
+            if (firewall_block_port(args->port, args->protocol) < 0) {
                 free(args);
                 return 1;
             }
             break;
 
         case CMD_FIREWALL_UNBLOCK_PORT:
-            if (firewall_unblock_port(args->port, "tcp") < 0) {
+            if (firewall_unblock_port(args->port, args->protocol) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_FIREWALL_STATUS:
+            if (firewall_status() < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_FIREWALL_LOG:
+            if (firewall_log(args->count) < 0) {
                 free(args);
                 return 1;
             }
@@ -501,6 +798,38 @@ int main(int argc, char **argv)
             }
             break;
 
+        case CMD_BANDWIDTH_SPEEDTEST: {
+            bandwidth_result_t result;
+            memset(&result, 0, sizeof(result));
+            if (bandwidth_speedtest(args->host, &result) < 0) {
+                free(args);
+                return 1;
+            }
+            print_bandwidth_results(&result);
+            break;
+        }
+
+        case CMD_BANDWIDTH_HISTORY:
+            if (bandwidth_history(args->interface, args->duration) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_BANDWIDTH_LIMIT:
+            if (bandwidth_limit(args->interface, args->max_bps) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_BANDWIDTH_SHAPER:
+            if (bandwidth_shaper(args->interface, args->download_bps, args->upload_bps) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
         case CMD_MONITOR_START:
             if (monitor_start(args->interface) < 0) {
                 free(args);
@@ -510,6 +839,38 @@ int main(int argc, char **argv)
 
         case CMD_MONITOR_ALERT:
             if (monitor_alert(args->interface, args->threshold) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_MONITOR_STOP:
+            if (monitor_stop() < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_MONITOR_STATUS: {
+            monitor_snapshot_t snapshot;
+            memset(&snapshot, 0, sizeof(snapshot));
+            if (monitor_status(&snapshot) < 0) {
+                free(args);
+                return 1;
+            }
+            print_monitor_status(&snapshot);
+            break;
+        }
+
+        case CMD_MONITOR_LOG:
+            if (monitor_log(args->interface, args->log_path) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_MONITOR_EXPORT:
+            if (monitor_export(args->interface, args->export_path) < 0) {
                 free(args);
                 return 1;
             }
@@ -548,6 +909,21 @@ int main(int argc, char **argv)
             free(disc_result);
             break;
         }
+
+        case CMD_DISCOVERY_DNS:
+        case CMD_DISCOVERY_SNMP:
+        case CMD_DISCOVERY_UPNP:
+        case CMD_DISCOVERY_MDNS:
+        case CMD_DISCOVERY_LLMNR:
+        case CMD_DISCOVERY_NETBIOS:
+        case CMD_DISCOVERY_SMB:
+        case CMD_DISCOVERY_HTTP:
+        case CMD_DISCOVERY_SSL:
+            if (run_discovery_variant(args) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
 
         case CMD_SECURITY_SCAN: {
             security_scan_result_t *sec_result = calloc(1, sizeof(*sec_result));
@@ -609,6 +985,37 @@ int main(int argc, char **argv)
             }
             break;
         }
+
+        case CMD_SECURITY_DNS:
+            if (security_dns_check(args->dns_server) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_SECURITY_MITM_DETECT:
+            if (security_mitm_detect(args->interface) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+
+        case CMD_SECURITY_PORT_KNOCKING: {
+            int ports[32];
+            int port_count = parse_port_list(args->rule, ports, 32);
+            if (port_count < 0 || security_port_knocking(args->host, ports, port_count) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
+        }
+
+        case CMD_SECURITY_HONEYPOT_DETECT:
+            if (security_honeypot_detect(args->host) < 0) {
+                free(args);
+                return 1;
+            }
+            break;
 
         default:
             fprintf(stderr, "Unknown command\n");
