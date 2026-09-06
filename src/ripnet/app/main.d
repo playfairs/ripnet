@@ -277,9 +277,11 @@ int main(string[] args)
         return captureModule.capture(options.interfaceName,
                 options.filter, options.packetCount, options.promisc);
     case Command.portKnocking:
-    case Command.ddos:
         printCommandError(options.command, "operation is not available");
         return -1;
+    case Command.ddos:
+        writeln("ddos: that's very minimalist of you.");
+        return 0;
     case Command.help:
     case Command.showVersion:
         return 0;
