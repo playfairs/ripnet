@@ -1,6 +1,7 @@
 module ripnet.network.dns;
 
 import ripnet.model;
+import ripnet.network.target : invalidTargetMessage, isAddressLike;
 import std.datetime.stopwatch : StopWatch, AutoStart;
 import std.socket : Address, getAddress;
 import std.string : splitLines, strip, split;
@@ -12,6 +13,11 @@ public DnsResult lookup(string hostname)
     auto watch = StopWatch(AutoStart.yes);
     DnsResult result;
     result.hostname = hostname;
+    if (!isAddressLike(hostname))
+    {
+        result.error = invalidTargetMessage(hostname);
+        return result;
+    }
     try
     {
         Address[] addresses = getAddress(hostname, 0);

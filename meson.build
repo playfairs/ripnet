@@ -28,6 +28,7 @@ ripnet_sources = files(
   'src/ripnet/network/probe.d',
   'src/ripnet/network/route.d',
   'src/ripnet/network/scan.d',
+  'src/ripnet/network/target.d',
   'src/ripnet/network/traceroute.d',
   'src/ripnet/monitoring/bandwidth.d',
   'src/ripnet/monitoring/monitor.d',
@@ -58,6 +59,7 @@ ripnet_util_tests = executable(
   'ripnet-tests',
   files(
     'src/ripnet/network/packet.d',
+    'src/ripnet/network/target.d',
     'tests/packet_test.d',
   ),
   include_directories: include_directories('src'),

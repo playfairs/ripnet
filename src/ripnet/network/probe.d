@@ -1,6 +1,7 @@
 module ripnet.network.probe;
 
 import ripnet.model;
+import ripnet.network.target : invalidTargetMessage, isAddressLike;
 import std.socket;
 import std.datetime.stopwatch : StopWatch, AutoStart;
 import std.datetime : dur;
@@ -17,6 +18,11 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
 {
     PingResult result;
     result.host = host;
+    if (!isAddressLike(host))
+    {
+        result.error = invalidTargetMessage(host);
+        return result;
+    }
     auto addresses = resolve(host, port);
     if (!addresses.length)
     {
@@ -43,6 +49,11 @@ public PingResult udpProbe(string host, ushort port)
 {
     PingResult result;
     result.host = host;
+    if (!isAddressLike(host))
+    {
+        result.error = invalidTargetMessage(host);
+        return result;
+    }
     auto addresses = resolve(host, port);
     if (!addresses.length)
     {

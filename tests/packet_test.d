@@ -1,4 +1,6 @@
 import ripnet.network.packet;
+import ripnet.network.target;
+import std.algorithm : canFind;
 
 int main()
 {
@@ -26,5 +28,12 @@ int main()
 
     assert(!parseEthernet(ubyte[].init, frame));
     assert(!parseIpv4([0x60], ip));
+    assert(isAddressLike("192.0.2.1"));
+    assert(isAddressLike("example.com"));
+    assert(isAddressLike("localhost"));
+    assert(!isAddressLike("irfnhkjrfnnf"));
+    assert(!isAddressLike("not a domain"));
+    assert(!isAddressLike("999.0.2.1"));
+    assert(invalidTargetMessage("irfnhkjrfnnf").canFind("invalid target format"));
     return 0;
 }
