@@ -1,0 +1,252 @@
+name: Build ripnet
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version from VERSION, without the v prefix'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-build:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          output="$(nix build .#default --no-link --print-out-paths)"
+          test -x "$output/bin/ripnet"
+          test "$("$output/bin/ripnet" --version)" = "ripnet $version"
+          mkdir -p dist
+          cp "$output/bin/ripnet" "dist/ripnet-v${version}-linux-x86_64"
+          test -x "dist/ripnet-v${version}-linux-x86_64"
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: dist/ripnet-v*-linux-x86_64
+          if-no-files-found: error
+
+  macos-build:
+    name: macOS arm64
+    runs-on: macos-14
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          output="$(nix build .#default --no-link --print-out-paths)"
+          test -x "$output/bin/ripnet"
+          test "$("$output/bin/ripnet" --version)" = "ripnet $version"
+          mkdir -p dist
+          cp "$output/bin/ripnet" "dist/ripnet-v${version}-macos-arm64"
+          test -x "dist/ripnet-v${version}-macos-arm64"
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/ripnet-v*-macos-arm64
+          if-no-files-found: error
+
+  validate-release:
+    name: Validate release version
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate VERSION and release input
+        id: version
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          semver_regex='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          [[ "$version" =~ $semver_regex ]]
+          test "$REQUESTED_VERSION" = "$version"
+          case "$version" in
+            *-*) prerelease=true ;;
+            *) prerelease=false ;;
+          esac
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'prerelease=%s\n' "$prerelease" >> "$GITHUB_OUTPUT"
+
+  release-linux-build:
+    name: Release Linux x86_64
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build release executable
+        shell: bash
+        env:
+          VERSION: ${{ needs.validate-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          output="$(nix build .#default --no-link --print-out-paths)"
+          test -x "$output/bin/ripnet"
+          test "$("$output/bin/ripnet" --version)" = "ripnet $VERSION"
+          mkdir -p dist
+          cp "$output/bin/ripnet" "dist/ripnet-v${VERSION}-linux-x86_64"
+          test -x "dist/ripnet-v${VERSION}-linux-x86_64"
+
+      - name: Upload release executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-x86_64
+          path: dist/ripnet-v*-linux-x86_64
+          if-no-files-found: error
+
+  release-macos-build:
+    name: Release macOS arm64
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-release
+    runs-on: macos-14
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build release executable
+        shell: bash
+        env:
+          VERSION: ${{ needs.validate-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          output="$(nix build .#default --no-link --print-out-paths)"
+          test -x "$output/bin/ripnet"
+          test "$("$output/bin/ripnet" --version)" = "ripnet $VERSION"
+          mkdir -p dist
+          cp "$output/bin/ripnet" "dist/ripnet-v${VERSION}-macos-arm64"
+          test -x "dist/ripnet-v${VERSION}-macos-arm64"
+
+      - name: Upload release executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-arm64
+          path: dist/ripnet-v*-macos-arm64
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub release
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - validate-release
+      - release-linux-build
+      - release-macos-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: release-${{ needs.validate-release.outputs.version }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release executables
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: false
+
+      - name: Verify release assets
+        shell: bash
+        env:
+          VERSION: ${{ needs.validate-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          linux_asset="dist/release-linux-x86_64/ripnet-v${VERSION}-linux-x86_64"
+          macos_asset="dist/release-macos-arm64/ripnet-v${VERSION}-macos-arm64"
+          test -x "$linux_asset"
+          test -x "$macos_asset"
+
+      - name: Create release tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate-release.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if git ls-remote --exit-code --refs origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists" >&2
+            exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release ${tag} already exists" >&2
+            exit 1
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag -a "$tag" -m "Release ${tag}"
+          git push origin "$tag"
+
+      - name: Publish GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate-release.outputs.version }}
+          PRERELEASE: ${{ needs.validate-release.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          linux_asset="dist/release-linux-x86_64/ripnet-v${VERSION}-linux-x86_64"
+          macos_asset="dist/release-macos-arm64/ripnet-v${VERSION}-macos-arm64"
+          prerelease_args=()
+          if [[ "$PRERELEASE" == true ]]; then
+            prerelease_args+=(--prerelease)
+          fi
+          gh release create "$tag" \
+            "$linux_asset" \
+            "$macos_asset" \
+            --title "ripnet ${tag}" \
+            --generate-notes \
+            "${prerelease_args[@]}"
