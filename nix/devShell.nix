@@ -4,7 +4,7 @@
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    gcc
+    ldc
     gdb
     valgrind
     meson

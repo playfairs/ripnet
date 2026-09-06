@@ -8,9 +8,13 @@ stdenv.mkDerivation {
   pname = "ripnet";
   version = lib.removeSuffix "\n" (builtins.readFile ../VERSION);
 
-  src = ./.;
+  src = builtins.path {
+    path = ../.;
+    name = "ripnet-source";
+  };
 
   nativeBuildInputs = with pkgs; [
+    ldc
     meson
     ninja
     pkg-config
