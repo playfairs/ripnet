@@ -58,6 +58,9 @@ jobs:
           version="$(cat VERSION)"
           linux_asset="dist/linux-x86_64/ripnet-v${version}-linux-x86_64"
           macos_asset="dist/macos-arm64/ripnet-v${version}-macos-arm64"
+          test -f "$linux_asset"
+          test -f "$macos_asset"
+          chmod +x "$linux_asset" "$macos_asset"
           test -x "$linux_asset"
           test -x "$macos_asset"
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
@@ -285,6 +288,9 @@ jobs:
           set -euo pipefail
           linux_asset="dist/release-linux-x86_64/ripnet-v${VERSION}-linux-x86_64"
           macos_asset="dist/release-macos-arm64/ripnet-v${VERSION}-macos-arm64"
+          test -f "$linux_asset"
+          test -f "$macos_asset"
+          chmod +x "$linux_asset" "$macos_asset"
           test -x "$linux_asset"
           test -x "$macos_asset"
 
