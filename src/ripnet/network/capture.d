@@ -1,7 +1,7 @@
 module ripnet.network.capture;
 
 import ripnet.network.packet;
-import std.string : toStringz, fromStringz;
+import std.string : toStringz, fromStringz, strip, startsWith;
 import std.stdio : writefln, writeln;
 
 extern (C)
@@ -34,7 +34,7 @@ public int capture(string interfaceName, string filter, uint count, bool promisc
             1000, errorBuffer.ptr);
     if (handle is null)
     {
-        writeln("capture: ", cast(string) errorBuffer[]);
+        writeln("capture: ", cleanError(fromStringz(errorBuffer.ptr)));
         return -1;
     }
     scope (exit)
@@ -50,7 +50,7 @@ public int capture(string interfaceName, string filter, uint count, bool promisc
             continue;
         if (status < 0)
         {
-            writeln("capture: ", fromStringz(pcap_geterr(handle)));
+            writeln("capture: ", cleanError(fromStringz(pcap_geterr(handle))));
             return -1;
         }
         auto bytes = data[0 .. header.caplen];
@@ -63,6 +63,14 @@ public int capture(string interfaceName, string filter, uint count, bool promisc
         ++captured;
     }
     return 0;
+}
+
+private string cleanError(const(char)[] message)
+{
+    auto cleaned = message.strip.idup;
+    if (cleaned.startsWith(":"))
+        cleaned = cleaned[1 .. $].strip;
+    return cleaned;
 }
 
 private string hex(ubyte[6] address)

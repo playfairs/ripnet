@@ -43,6 +43,16 @@ int main(string[] args)
         writeln("ripnet ", versionString);
         return 0;
     }
+    if (options.command == Command.capture && options.interfaceName.length == 0)
+    {
+        printCommandError(options.command, "missing interface");
+        return 2;
+    }
+    if (requiresTarget(options))
+    {
+        printCommandError(options.command, "missing target");
+        return 2;
+    }
 
     final switch (options.command)
     {
@@ -273,6 +283,58 @@ int main(string[] args)
 private void printCommandError(Command command, string message)
 {
     writeln(commandName(command), ": ", message);
+}
+
+private bool requiresTarget(CliOptions options)
+{
+    switch (options.command)
+    {
+    case Command.ping:
+    case Command.pingTcp:
+    case Command.pingUdp:
+    case Command.pingSweep:
+    case Command.traceroute:
+    case Command.tracerouteTcp:
+    case Command.tracerouteUdp:
+    case Command.tracerouteIcmp:
+    case Command.portScan:
+    case Command.scan:
+    case Command.serviceScan:
+    case Command.osFingerprint:
+    case Command.vulnerabilityScan:
+    case Command.networkScan:
+    case Command.udpScan:
+    case Command.synScan:
+    case Command.finScan:
+    case Command.xmasScan:
+    case Command.nullScan:
+    case Command.dnsLookup:
+    case Command.dnsReverse:
+    case Command.dnsQuery:
+    case Command.dnsServerTest:
+    case Command.dnsTrace:
+    case Command.dnsBruteforce:
+    case Command.dnsZoneTransfer:
+    case Command.dnssecVerify:
+    case Command.routeGet:
+    case Command.routeTrace:
+    case Command.routeMonitor:
+    case Command.securitySsh:
+    case Command.securityHttp:
+    case Command.securitySsl:
+    case Command.securitySmtp:
+    case Command.securityBanner:
+    case Command.securityDns:
+    case Command.securityAudit:
+    case Command.securityScan:
+    case Command.tcpStress:
+    case Command.httpStress:
+        return options.host.length == 0
+            && options.network.length == 0 && options.domain.length == 0
+            && options.ipAddress.length == 0;
+    default:
+        return false;
+    }
 }
 
 private int printProbe(Command command, PingResult result)

@@ -53,6 +53,7 @@ ripnet_executable = executable(
 
 test('cli-help', ripnet_executable, args: ['--help'])
 test('cli-command-help', ripnet_executable, args: ['ping', 'example.com', '--help'])
+test('scan-missing-target', ripnet_executable, args: ['scan'], should_fail: true)
 test('network-scan-dispatch', ripnet_executable, args: ['network-scan', '192.0.2.0/30'])
 
 ripnet_util_tests = executable(
