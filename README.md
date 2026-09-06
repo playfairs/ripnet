@@ -11,13 +11,15 @@ Network diagnostics, packet analysis, observability, and authorized load-testing
 - Linux, macOS, or BSD
 - gcc
 - libpcap
-- make
+- Meson
+- Ninja
 
 ## Installation
 
 ```bash
-make
-sudo make install
+meson setup build
+meson compile -C build
+sudo meson install -C build
 ```
 
 ## Usage

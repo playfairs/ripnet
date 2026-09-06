@@ -5,8 +5,9 @@ pkgs.mkShell {
     gcc
     gdb
     valgrind
+    meson
+    ninja
     pkg-config
     libpcap
-    gnumake
   ];
 }

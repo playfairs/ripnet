@@ -7,21 +7,14 @@ stdenv.mkDerivation {
   src = ./.;
 
   nativeBuildInputs = with pkgs; [
+    meson
+    ninja
     pkg-config
-    make
   ];
 
   buildInputs = with pkgs; [
     libpcap
   ];
-
-  makeFlags = [ "PREFIX=$(out)" ];
-
-  installPhase = ''
-    mkdir -p $out/bin
-    cp bin/ripnet $out/bin/
-    chmod +x $out/bin/ripnet
-  '';
 
   meta = with lib; {
     description = "Network diagnostics, packet analysis, observability, and authorized load-testing toolkit";
