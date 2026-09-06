@@ -2,7 +2,7 @@ module ripnet.platform.interfaces;
 
 import ripnet.model;
 import std.file : exists, read, dirEntries, SpanMode, DirEntry;
-import std.path : buildPath;
+import std.path : baseName, buildPath;
 import std.string : splitLines, strip, split;
 import std.conv : to;
 
@@ -34,7 +34,7 @@ public NetworkInterface[] listInterfaces()
     {
         foreach (entry; dirEntries("/sys/class/net", SpanMode.shallow))
         {
-            auto name = entry.name.baseName;
+            auto name = baseName(entry.name);
             NetworkInterface item;
             item.name = name;
             item.address = "";
