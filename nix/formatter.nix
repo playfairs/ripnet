@@ -12,13 +12,11 @@ let
       nixf-diagnose.enable = true;
       toml-sort.enable = true;
       black.enable = true;
-      clang-format.enable = true;
+      dfmt.enable = true;
     };
 
-    settings.formatter.clang-format.includes = [
-      "*.c"
-      "*.h"
-      "*.cpp"
+    settings.formatter.dfmt.includes = [
+      "*.d"
     ];
   });
 in
