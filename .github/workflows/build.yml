@@ -188,7 +188,7 @@ jobs:
 
   validate-release:
     name: Validate release version
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -201,13 +201,14 @@ jobs:
         id: version
         shell: bash
         env:
-          REQUESTED_VERSION: ${{ inputs.version }}
+          REQUESTED_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.version }}
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
+          requested_version="${REQUESTED_VERSION#v}"
           semver_regex='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
           [[ "$version" =~ $semver_regex ]]
-          test "$REQUESTED_VERSION" = "$version"
+          test "$requested_version" = "$version"
           case "$version" in
             *-*) prerelease=true ;;
             *) prerelease=false ;;
@@ -217,7 +218,7 @@ jobs:
 
   release-linux-build:
     name: Release Linux x86_64
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     needs: validate-release
     runs-on: ubuntu-24.04
     steps:
@@ -249,7 +250,7 @@ jobs:
 
   release-macos-build:
     name: Release macOS arm64
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     needs: validate-release
     runs-on: macos-14
     steps:
@@ -281,7 +282,7 @@ jobs:
 
   publish-release:
     name: Publish GitHub release
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
     needs:
       - validate-release
       - release-linux-build
@@ -320,6 +321,7 @@ jobs:
           test -x "$macos_asset"
 
       - name: Create release tag
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         env:
           VERSION: ${{ needs.validate-release.outputs.version }}
@@ -340,7 +342,7 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.validate-release.outputs.version }}
+          tag_name: ${{ github.event_name == 'release' && github.event.release.tag_name || format('v{0}', needs.validate-release.outputs.version) }}
           name: ripnet v${{ needs.validate-release.outputs.version }}
           generate_release_notes: true
           prerelease: ${{ needs.validate-release.outputs.prerelease }}
