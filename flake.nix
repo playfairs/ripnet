@@ -31,6 +31,16 @@
         };
     in
     {
+      packages = nixpkgs.lib.genAttrs systems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.callPackage ./nix/buildPackage.nix { };
+        }
+      );
+
       devShells = nixpkgs.lib.genAttrs systems (
         system:
         let
@@ -41,7 +51,7 @@
             buildInputs =
               with pkgs;
               [
-                gcc
+                ldc
                 gdb
                 meson
                 ninja

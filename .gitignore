@@ -1,6 +1,4 @@
 # Prerequisites
-*.d
-
 # Object files
 *.o
 *.ko
@@ -33,6 +31,9 @@
 *.out
 *.app
 bin/
+build*/
+result
+result-*
 *.i*86
 *.x86_64
 *.hex
