@@ -350,15 +350,15 @@ jobs:
             Download the executable for your platform, then run:
 
             ```sh
-            chmod +x ripnet-v${{ steps.verify.outputs.version }}-linux-x86_64
-            sudo install -m 755 ripnet-v${{ steps.verify.outputs.version }}-linux-x86_64 /usr/local/bin/ripnet
+            chmod +x ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64
+            sudo install -m 755 ripnet-v${{ needs.validate-release.outputs.version }}-linux-x86_64 /usr/local/bin/ripnet
             ```
 
             or for macOS
 
             ```sh
-            chmod +x ripnet-v${{ steps.verify.outputs.version }}-macos-arm64
-            sudo install -m 755 ripnet-v${{ steps.verify.outputs.version }}-macos-arm64 /usr/local/bin/ripnet
+            chmod +x ripnet-v${{ needs.validate-release.outputs.version }}-macos-arm64
+            sudo install -m 755 ripnet-v${{ needs.validate-release.outputs.version }}-macos-arm64 /usr/local/bin/ripnet
             ```
 
             The release assets are raw executables without a file extension. `install -m 755` sets the executable permission and installs `ripnet` on your PATH.
