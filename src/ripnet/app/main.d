@@ -13,6 +13,7 @@ import probeModule = ripnet.network.probe;
 import routeModule = ripnet.network.route;
 import scanModule = ripnet.network.scan;
 import tracerouteModule = ripnet.network.traceroute;
+import targetModule = ripnet.network.target;
 import securityModule = ripnet.security.security;
 import stressModule = ripnet.stress.stress;
 import firewallModule = ripnet.system.firewall;
@@ -51,6 +52,11 @@ int main(string[] args)
     if (requiresTarget(options))
     {
         printCommandError(options.command, "missing target");
+        return 2;
+    }
+    if (hasInvalidScanTarget(options))
+    {
+        printCommandError(options.command, targetModule.invalidTargetMessage(options.host));
         return 2;
     }
 
@@ -283,6 +289,24 @@ int main(string[] args)
 private void printCommandError(Command command, string message)
 {
     writeln(commandName(command), ": ", message);
+}
+
+private bool hasInvalidScanTarget(CliOptions options)
+{
+    switch (options.command)
+    {
+    case Command.portScan:
+    case Command.scan:
+    case Command.serviceScan:
+    case Command.udpScan:
+    case Command.synScan:
+    case Command.finScan:
+    case Command.xmasScan:
+    case Command.nullScan:
+        return !targetModule.isAddressLike(options.host);
+    default:
+        return false;
+    }
 }
 
 private bool requiresTarget(CliOptions options)
