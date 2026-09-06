@@ -72,7 +72,8 @@ int main(string[] args)
                 probeModule.tcpProbe(options.host, options.port ? options.port : 80));
     case Command.pingUdp:
         return printProbe(options.command,
-                probeModule.udpProbe(options.host, options.port ? options.port : 53));
+            probeModule.udpProbe(options.host, options.port ? options.port : 53,
+                options.timeoutMs));
     case Command.pingSweep:
         return printScans(scanModule.networkScan(options.network.length
                 ? options.network : options.host));

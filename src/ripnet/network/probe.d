@@ -34,7 +34,11 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
     {
         auto socket = new Socket(addresses[0].addressFamily, SocketType.STREAM);
         scope (exit)
+        {
             socket.close();
+        }
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
+            dur!"msecs"(timeoutMs));
         socket.connect(addresses[0]);
         result.success = true;
         result.address = addresses[0].toString;
@@ -45,7 +49,7 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
     return result;
 }
 
-public PingResult udpProbe(string host, ushort port)
+public PingResult udpProbe(string host, ushort port, uint timeoutMs = 1000)
 {
     PingResult result;
     result.host = host;
@@ -60,15 +64,21 @@ public PingResult udpProbe(string host, ushort port)
         result.error = "address resolution failed";
         return result;
     }
+    auto watch = StopWatch(AutoStart.yes);
     try
     {
         auto socket = new Socket(addresses[0].addressFamily, SocketType.DGRAM);
         scope (exit)
+        {
             socket.close();
+        }
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
+            dur!"msecs"(timeoutMs));
         ubyte[] payload = cast(ubyte[]) "ripnet".dup;
         socket.sendTo(payload, addresses[0]);
         result.success = true;
         result.address = addresses[0].toString;
+        result.latencyMs = watch.peek.total!"msecs";
     }
     catch (Exception exception)
         result.error = exception.msg;
