@@ -1,7 +1,5 @@
 # [ripnet](https://ripnet.cc)
 
-![](./assets/icon/ripnet-banner-(500x100).png)
-
 Network diagnostics, packet analysis, observability, and authorized load-testing toolkit.
 
 ---
