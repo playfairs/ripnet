@@ -12,6 +12,7 @@ public string[] connections(bool listening = false)
 public int print(bool listening = false, bool json = false)
 {
     import std.stdio : stderr, writeln;
+
     auto result = run("ss", listening ? ["-lntup"] : ["-ntup"]);
     if (!result.success)
     {

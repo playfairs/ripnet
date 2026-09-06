@@ -8,7 +8,7 @@ import std.conv : to;
 import std.string : split;
 
 public ScanResult[] scanPorts(string host, ushort firstPort, ushort lastPort,
-    uint timeoutMs = 1000, bool verbose = false)
+        uint timeoutMs = 1000, bool verbose = false)
 {
     import std.stdio : stderr, writefln;
 

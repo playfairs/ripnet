@@ -37,8 +37,7 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
         {
             socket.close();
         }
-        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
-            dur!"msecs"(timeoutMs));
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"msecs"(timeoutMs));
         socket.connect(addresses[0]);
         result.success = true;
         result.address = addresses[0].toString;
@@ -72,8 +71,7 @@ public PingResult udpProbe(string host, ushort port, uint timeoutMs = 1000)
         {
             socket.close();
         }
-        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO,
-            dur!"msecs"(timeoutMs));
+        socket.setOption(SocketOptionLevel.SOCKET, SocketOption.SNDTIMEO, dur!"msecs"(timeoutMs));
         ubyte[] payload = cast(ubyte[]) "ripnet".dup;
         socket.sendTo(payload, addresses[0]);
         result.success = true;

@@ -72,11 +72,11 @@ int main(string[] args)
                 probeModule.tcpProbe(options.host, options.port ? options.port : 80));
     case Command.pingUdp:
         return printProbe(options.command,
-            probeModule.udpProbe(options.host, options.port ? options.port : 53,
-                options.timeoutMs));
+                probeModule.udpProbe(options.host, options.port ? options.port
+                    : 53, options.timeoutMs));
     case Command.pingSweep:
         return printScans(scanModule.networkScan(options.network.length
-            ? options.network : options.host, 0, options.timeoutMs), options.json);
+                ? options.network : options.host, 0, options.timeoutMs), options.json);
     case Command.scan:
     case Command.portScan:
     case Command.udpScan:
@@ -85,10 +85,10 @@ int main(string[] args)
     case Command.xmasScan:
     case Command.nullScan:
         return printScans(scanModule.scanPorts(options.host, options.startPort,
-            options.endPort, options.timeoutMs, options.verbose), options.json);
+                options.endPort, options.timeoutMs, options.verbose), options.json);
     case Command.networkScan:
         return printScans(scanModule.networkScan(options.network.length
-            ? options.network : options.host, options.port, options.timeoutMs), options.json);
+                ? options.network : options.host, options.port, options.timeoutMs), options.json);
     case Command.osFingerprint:
         writeln("OS fingerprint: Unknown");
         return 0;
@@ -398,9 +398,8 @@ private int printScans(ScanResult[] results, bool json = false)
         writeln("[");
         foreach (index, result; results)
         {
-            writefln("  {\"host\":\"%s\",\"port\":%d,\"open\":%s}%s",
-                    result.host, result.port, result.open ? "true" : "false",
-                    index + 1 == results.length ? "" : ",");
+            writefln("  {\"host\":\"%s\",\"port\":%d,\"open\":%s}%s", result.host, result.port,
+                    result.open ? "true" : "false", index + 1 == results.length ? "" : ",");
         }
         writeln("]");
         return 0;
