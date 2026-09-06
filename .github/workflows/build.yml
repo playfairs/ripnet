@@ -208,8 +208,10 @@ jobs:
           requested_version="${REQUESTED_VERSION#v}"
           semver_regex='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
           [[ "$version" =~ $semver_regex ]]
-          test "$requested_version" = "$version"
-          case "$version" in
+          [[ "$requested_version" =~ $semver_regex ]]
+          requested_base="${requested_version%%-*}"
+          test "$requested_base" = "$version"
+          case "$requested_version" in
             *-*) prerelease=true ;;
             *) prerelease=false ;;
           esac
