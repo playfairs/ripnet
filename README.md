@@ -7,7 +7,7 @@ Network diagnostics, packet analysis, observability, and authorized load-testing
 ## Requirements
 
 - Linux, macOS, or BSD
-- gcc
+- an LLVM D compiler (`ldc2`)
 - libpcap
 - Meson
 - Ninja
@@ -25,6 +25,39 @@ sudo meson install -C build
 ```bash
 ripnet --help
 ```
+
+## Development
+
+The primary build system is Meson. The repository also provides a Nix
+development shell with the C and D toolchains used by the build:
+
+```bash
+nix develop
+meson setup build
+meson compile -C build
+meson test -C build --print-errorlogs
+```
+
+The implementation is organized as D modules by responsibility:
+
+- `src/ripnet/app`: argument parsing and command dispatch
+- `src/ripnet/network`: DNS, probes, scans, routes, ARP, discovery, packet
+	parsing, traceroute, and libpcap capture
+- `src/ripnet/system`: firewall, netstat, and process adapters
+- `src/ripnet/monitoring`: interface counters, bandwidth, and monitor state
+- `src/ripnet/security` and `src/ripnet/stress`: higher-level checks and load
+	testing
+- `src/ripnet/platform`: OS command and interface adapters
+
+There are no C or C++ implementation files in the application. The only
+native interoperability boundary is the small `extern(C)` declaration set in
+`src/ripnet/network/capture.d`, which calls the third-party libpcap library.
+The rest of the application, including packet parsing and CLI behavior, is
+implemented in D.
+
+The test suite includes CLI smoke tests and malformed/truncated packet parser
+tests. Tests that exercise libpcap, firewall commands, or privileged system
+interfaces remain environment-dependent.
 
 ## Command Families
 
