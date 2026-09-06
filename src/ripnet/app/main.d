@@ -76,7 +76,7 @@ int main(string[] args)
                 options.timeoutMs));
     case Command.pingSweep:
         return printScans(scanModule.networkScan(options.network.length
-                ? options.network : options.host));
+            ? options.network : options.host, 0, options.timeoutMs), options.json);
     case Command.scan:
     case Command.portScan:
     case Command.udpScan:
@@ -85,10 +85,10 @@ int main(string[] args)
     case Command.xmasScan:
     case Command.nullScan:
         return printScans(scanModule.scanPorts(options.host, options.startPort,
-                options.endPort, options.timeoutMs, options.verbose));
+            options.endPort, options.timeoutMs, options.verbose), options.json);
     case Command.networkScan:
         return printScans(scanModule.networkScan(options.network.length
-                ? options.network : options.host, options.port, options.timeoutMs));
+            ? options.network : options.host, options.port, options.timeoutMs), options.json);
     case Command.osFingerprint:
         writeln("OS fingerprint: Unknown");
         return 0;
@@ -391,8 +391,20 @@ private int printScan(ScanResult result)
     return result.open ? 0 : -1;
 }
 
-private int printScans(ScanResult[] results)
+private int printScans(ScanResult[] results, bool json = false)
 {
+    if (json)
+    {
+        writeln("[");
+        foreach (index, result; results)
+        {
+            writefln("  {\"host\":\"%s\",\"port\":%d,\"open\":%s}%s",
+                    result.host, result.port, result.open ? "true" : "false",
+                    index + 1 == results.length ? "" : ",");
+        }
+        writeln("]");
+        return 0;
+    }
     foreach (result; results)
         if (result.open)
             printScan(result);
