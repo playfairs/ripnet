@@ -84,7 +84,7 @@ int main(string[] args)
     case Command.xmasScan:
     case Command.nullScan:
         return printScans(scanModule.scanPorts(options.host, options.startPort,
-                options.endPort, options.timeoutMs));
+                options.endPort, options.timeoutMs, options.verbose));
     case Command.networkScan:
         return printScans(scanModule.networkScan(options.network.length
                 ? options.network : options.host, options.port, options.timeoutMs));

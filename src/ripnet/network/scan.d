@@ -7,17 +7,32 @@ import std.array : array;
 import std.conv : to;
 import std.string : split;
 
-public ScanResult[] scanPorts(string host, ushort firstPort, ushort lastPort, uint timeoutMs = 1000)
+public ScanResult[] scanPorts(string host, ushort firstPort, ushort lastPort,
+        uint timeoutMs = 1000, bool verbose = false)
 {
+    import std.stdio : stderr, writefln;
+
     ScanResult[] results;
     if (firstPort > lastPort)
         return results;
+    auto total = cast(uint) lastPort - firstPort + 1;
+    stderr.writefln("scan: checking %s ports %d-%d", host, firstPort, lastPort);
     foreach (port; firstPort .. cast(uint) lastPort + 1)
     {
+        auto completed = cast(uint) port - firstPort;
+        if (verbose)
+            stderr.writefln("scan: [%d/%d] checking port %d", completed + 1, total, port);
         auto result = scanPort(host, cast(ushort) port, timeoutMs);
         if (result.open)
+        {
             results ~= result;
+            stderr.writefln("scan: [%d/%d] port %d open", completed + 1, total, port);
+        }
+        else if (verbose)
+            stderr.writefln("scan: [%d/%d] port %d closed or unreachable",
+                    completed + 1, total, port);
     }
+    stderr.writefln("scan: completed %d ports, %d open", total, results.length);
     return results;
 }
 
