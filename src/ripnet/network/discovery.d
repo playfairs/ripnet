@@ -45,6 +45,6 @@ public int unsupported(string feature)
 {
     import std.stdio : writeln;
 
-    writeln(feature, " discovery is unavailable on this platform");
+    writeln(feature, ": discovery is unavailable on this platform");
     return -1;
 }

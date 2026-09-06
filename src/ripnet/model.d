@@ -1,6 +1,7 @@
 module ripnet.model;
 
 import std.datetime : Duration, dur;
+import std.conv : to;
 
 public enum Command
 {
@@ -102,6 +103,23 @@ public enum Command
     pingFlood,
     portKnocking,
     ddos,
+}
+
+public string commandName(Command command)
+{
+    auto name = to!string(command);
+    string result;
+    foreach (character; name)
+    {
+        if (character >= 'A' && character <= 'Z')
+        {
+            result ~= '-';
+            result ~= cast(char)(character - 'A' + 'a');
+        }
+        else
+            result ~= character;
+    }
+    return result;
 }
 
 public struct CliOptions

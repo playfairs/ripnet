@@ -26,7 +26,10 @@ int main(string[] args)
     auto parsed = parseArgs(args);
     if (!parsed.ok)
     {
-        writeln("error: ", parsed.error);
+        if (parsed.options.command != Command.help)
+            printCommandError(parsed.options.command, parsed.error);
+        else
+            writeln("error: ", parsed.error);
         return 2;
     }
     auto options = parsed.options;
@@ -49,10 +52,11 @@ int main(string[] args)
         return 0;
     case Command.ping:
     case Command.pingTcp:
-        return printProbe(probeModule.tcpProbe(options.host, options.port ? options.port : 80));
+        return printProbe(options.command,
+                probeModule.tcpProbe(options.host, options.port ? options.port : 80));
     case Command.pingUdp:
-        return printProbe(probeModule.udpProbe(options.host,
-                options.port ? options.port : 53));
+        return printProbe(options.command,
+                probeModule.udpProbe(options.host, options.port ? options.port : 53));
     case Command.pingSweep:
         return printScans(scanModule.networkScan(options.network.length
                 ? options.network : options.host));
@@ -72,13 +76,14 @@ int main(string[] args)
         writeln("OS fingerprint: Unknown");
         return 0;
     case Command.vulnerabilityScan:
-        writeln("Vulnerability scan requires an authorized target and is unavailable");
+        printCommandError(options.command,
+                "vulnerability scanning is unavailable for this target");
         return -1;
     case Command.serviceScan:
         return printScan(scanModule.serviceScan(options.host,
                 options.port, options.timeoutMs));
     case Command.dnsLookup:
-        return printDns(dnsModule.lookup(options.host));
+        return printDns(options.command, dnsModule.lookup(options.host));
     case Command.dnsReverse:
         writeln(dnsModule.reverseLookup(options.ipAddress.length
                 ? options.ipAddress : options.host));
@@ -90,7 +95,10 @@ int main(string[] args)
         double average;
         auto success = dnsModule.serverTest(options.dnsServer.length
                 ? options.dnsServer : options.host, average);
-        writefln("DNS server: %s (%.2f ms)", success ? "ok" : "failed", average);
+        if (!success)
+            printCommandError(options.command, "DNS server unavailable");
+        else
+            writefln("DNS server: ok (%.2f ms)", average);
         return success ? 0 : -1;
     case Command.dnsBruteforce:
         return dnsModule.bruteForce(options.domain, options.wordlist);
@@ -99,7 +107,8 @@ int main(string[] args)
     case Command.dnsTrace:
     case Command.dnssecVerify:
     case Command.dnsZoneTransfer:
-        writeln("DNS operation is not supported by the selected platform adapter");
+        printCommandError(options.command,
+                "operation is not supported by the selected platform adapter");
         return -1;
     case Command.arpTable:
         foreach (entry; arpModule.table())
@@ -119,7 +128,8 @@ int main(string[] args)
     case Command.arpCacheDelete:
         return arpModule.remove(options.ipAddress, options.interfaceName);
     case Command.arpSpoofDetect:
-        writeln("ARP spoof detection requires packet capture privileges");
+        printCommandError(options.command,
+                "ARP spoof detection requires packet capture privileges");
         return 0;
     case Command.discoveryPing:
         foreach (host; discoveryModule.ping(options.network))
@@ -137,7 +147,7 @@ int main(string[] args)
     case Command.discoverySmb:
     case Command.discoveryHttp:
     case Command.discoverySsl:
-        return discoveryModule.unsupported("selected");
+        return discoveryModule.unsupported(commandName(options.command));
     case Command.netstat:
         return netstatModule.print(false, options.json);
     case Command.netstatListening:
@@ -180,7 +190,8 @@ int main(string[] args)
     case Command.unblockPort:
         return firewallModule.unblockPort(options.port, options.protocol);
     case Command.firewallLog:
-        writeln("firewall logging is platform-managed");
+        printCommandError(options.command,
+                "firewall logging is platform-managed");
         return 0;
     case Command.bandwidthTest:
     case Command.bandwidthMonitor:
@@ -192,7 +203,7 @@ int main(string[] args)
     case Command.bandwidthHistory:
     case Command.bandwidthLimit:
     case Command.bandwidthShaper:
-        writeln("bandwidth operation is unavailable without a configured peer");
+        printCommandError(options.command, "operation is unavailable without a configured peer");
         return -1;
     case Command.monitorStart:
         return ripnet.monitoring.monitor.start(options.interfaceName);
@@ -211,19 +222,20 @@ int main(string[] args)
     case Command.monitorExport:
         return ripnet.monitoring.monitor.exportStats(options.interfaceName, options.exportPath);
     case Command.securitySsh:
-        return printProbe(securityModule.ssh(options.host,
-                options.port ? options.port : 22));
+        return printProbe(options.command,
+                securityModule.ssh(options.host, options.port ? options.port : 22));
     case Command.securityHttp:
-        return printProbe(securityModule.http(options.host,
-                options.port ? options.port : 80));
+        return printProbe(options.command,
+                securityModule.http(options.host, options.port ? options.port : 80));
     case Command.securitySsl:
-        return printProbe(securityModule.ssl(options.host,
-                options.port ? options.port : 443));
+        return printProbe(options.command,
+                securityModule.ssl(options.host, options.port ? options.port : 443));
     case Command.securitySmtp:
-        return printProbe(securityModule.smtp(options.host,
-                options.port ? options.port : 25));
+        return printProbe(options.command,
+                securityModule.smtp(options.host, options.port ? options.port : 25));
     case Command.securityBanner:
-        return printProbe(securityModule.banner(options.host, options.port));
+        return printProbe(options.command,
+                securityModule.banner(options.host, options.port));
     case Command.securityAudit:
     case Command.securityScan:
     case Command.securityDns:
@@ -237,7 +249,8 @@ int main(string[] args)
         return 0;
     case Command.packetFlood:
     case Command.pingFlood:
-        writeln("flood operations require an explicit privileged implementation");
+        printCommandError(options.command,
+                "flood operations require an explicit privileged implementation");
         return -1;
     case Command.traceroute:
     case Command.tracerouteTcp:
@@ -249,7 +262,7 @@ int main(string[] args)
                 options.filter, options.packetCount, options.promisc);
     case Command.portKnocking:
     case Command.ddos:
-        writeln("operation is not available");
+        printCommandError(options.command, "operation is not available");
         return -1;
     case Command.help:
     case Command.showVersion:
@@ -257,20 +270,25 @@ int main(string[] args)
     }
 }
 
-private int printProbe(PingResult result)
+private void printCommandError(Command command, string message)
+{
+    writeln(commandName(command), ": ", message);
+}
+
+private int printProbe(Command command, PingResult result)
 {
     if (result.success)
         writefln("%s: reachable (%.2f ms)", result.host, result.latencyMs);
     else
-        writefln("%s: %s", result.host, result.error);
+        printCommandError(command, result.error);
     return result.success ? 0 : -1;
 }
 
-private int printDns(DnsResult result)
+private int printDns(Command command, DnsResult result)
 {
     if (!result.success)
     {
-        writeln(result.hostname, ": ", result.error);
+        printCommandError(command, result.error);
         return -1;
     }
     foreach (address; result.addresses)

@@ -143,6 +143,11 @@ public ParseResult parseArgs(string[] args)
         }
         if (endOfOptions || !token.startsWith("--"))
         {
+            if (!positional.length && token in known)
+            {
+                options.command = known[token];
+                continue;
+            }
             positional ~= token;
             continue;
         }
@@ -190,11 +195,6 @@ public ParseResult parseArgs(string[] args)
             return ParseResult(options, error, false);
     }
     options.positional = positional;
-    if (positional.length && positional[0] in known)
-    {
-        options.command = known[positional[0]];
-        positional = positional[1 .. $];
-    }
     if (!options.host.length && positional.length)
         options.host = positional[0];
     if (!options.hostname.length)
