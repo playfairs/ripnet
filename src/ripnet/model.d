@@ -130,6 +130,9 @@ public struct CliOptions
     string filter;
     string host;
     string hostname;
+    string sshUser;
+    string sshIdentity;
+    string sshCommand;
     string network;
     string domain;
     string dnsServer;

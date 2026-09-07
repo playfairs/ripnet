@@ -100,6 +100,7 @@ private Command[string] commands()
     result["monitor-log"] = Command.monitorLog;
     result["monitor-export"] = Command.monitorExport;
     result["security-ssh"] = Command.securitySsh;
+    result["ssh"] = Command.securitySsh;
     result["security-http"] = Command.securityHttp;
     result["security-ssl"] = Command.securitySsl;
     result["security-smtp"] = Command.securitySmtp;
@@ -119,7 +120,8 @@ private Command[string] commands()
 private bool needsValue(string key)
 {
     return [
-        "interface", "filter", "host", "hostname", "network", "domain",
+        "interface", "filter", "host", "hostname", "user", "identity", "command",
+        "network", "domain",
         "dns-server", "record-type", "wordlist", "ip", "mac", "protocol", "chain",
         "rule", "log", "export", "process", "path", "port", "start-port",
         "end-port", "count", "timeout", "concurrency", "duration", "interval",
@@ -139,6 +141,7 @@ private string canonicalOption(string option)
     case "f": return "filter";
     case "H": return "host";
     case "N": return "hostname";
+    case "u": return "user";
     case "n": return "network";
     case "d": return "domain";
     case "s": return "dns-server";
@@ -275,6 +278,15 @@ private string assign(ref CliOptions options, string key, string value)
         case "hostname":
             options.hostname = value;
             break;
+        case "user":
+            options.sshUser = value;
+            break;
+        case "identity":
+            options.sshIdentity = value;
+            break;
+        case "command":
+            options.sshCommand = value;
+            break;
         case "network":
             options.network = value;
             break;
@@ -397,7 +409,7 @@ public void printUsage()
     writeln("  Monitoring: bandwidth-test, bandwidth-speedtest, bandwidth-monitor,");
     writeln("    bandwidth-history, bandwidth-limit, bandwidth-shaper, monitor-start,");
     writeln("    monitor-stop, monitor-status, monitor-alert, monitor-log, monitor-export");
-    writeln("  Security: security-ssh, security-http, security-ssl, security-smtp,");
+    writeln("  Security: ssh, security-ssh, security-http, security-ssl, security-smtp,");
     writeln("    security-banner, security-dns, security-audit, security-scan");
     writeln("  Authorized stress testing: tcp-stress, http-stress, packet-flood,");
     writeln("    ping-flood, port-knocking, ddos");
@@ -643,6 +655,14 @@ public void printCommandUsage(Command command)
         description = "run an unavailable discovery adapter";
         break;
     case Command.securitySsh:
+        usage ~= " HOST [--user NAME] [--port N] [--identity FILE] [--command CMD]";
+        description = "open an interactive SSH connection";
+        flags = ["--user NAME, -u NAME      remote SSH user",
+            "--port N, -p N            SSH port (default: 22)",
+            "--identity FILE           private key file",
+            "--command CMD             run a remote command instead of a shell"];
+        example ~= " admin@example.com --identity ~/.ssh/id_ed25519";
+        break;
     case Command.securityHttp:
     case Command.securitySsl:
     case Command.securitySmtp:

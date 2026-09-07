@@ -247,8 +247,9 @@ int main(string[] args)
     case Command.monitorExport:
         return ripnet.monitoring.monitor.exportStats(options.interfaceName, options.exportPath);
     case Command.securitySsh:
-        return printProbe(options.command,
-                securityModule.ssh(options.host, options.port ? options.port : 22));
+        return securityModule.connectSsh(options.host, options.sshUser,
+            options.port ? options.port : 22, options.sshIdentity,
+            options.sshCommand);
     case Command.securityHttp:
         return printProbe(options.command,
                 securityModule.http(options.host, options.port ? options.port : 80));

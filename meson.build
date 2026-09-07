@@ -58,6 +58,7 @@ test('cli-version-default', ripnet_executable)
 test('cli-version-short', ripnet_executable, args: ['-v'])
 test('cli-short-options', ripnet_executable,
   args: ['ping', 'example.com', '-p', '443', '--help'])
+test('cli-ssh-help', ripnet_executable, args: ['ssh', '--help'])
 test('cli-command-help', ripnet_executable, args: ['ping', 'example.com', '--help'])
 test('ddos-easter-egg', ripnet_executable, args: ['ddos'])
 test('scan-missing-target', ripnet_executable, args: ['scan'], should_fail: true)
