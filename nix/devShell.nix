@@ -5,9 +5,9 @@
 pkgs.mkShell {
   buildInputs = with pkgs; [
     ldc
+    nox
     gdb
     valgrind
-    meson
     ninja
     pkg-config
     libpcap
