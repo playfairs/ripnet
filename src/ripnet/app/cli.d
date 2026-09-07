@@ -101,6 +101,7 @@ private Command[string] commands()
     result["monitor-export"] = Command.monitorExport;
     result["security-ssh"] = Command.securitySsh;
     result["ssh"] = Command.securitySsh;
+    result["sftp"] = Command.sftp;
     result["security-http"] = Command.securityHttp;
     result["security-ssl"] = Command.securitySsl;
     result["security-smtp"] = Command.securitySmtp;
@@ -121,6 +122,8 @@ private bool needsValue(string key)
 {
     return [
         "interface", "filter", "host", "hostname", "user", "identity", "command",
+        "jump-host", "local-forward", "remote-forward", "dynamic-forward",
+        "proxy-command", "ssh-option", "remote-path",
         "network", "domain",
         "dns-server", "record-type", "wordlist", "ip", "mac", "protocol", "chain",
         "rule", "log", "export", "process", "path", "port", "start-port",
@@ -142,6 +145,10 @@ private string canonicalOption(string option)
     case "H": return "host";
     case "N": return "hostname";
     case "u": return "user";
+    case "A": return "agent-forwarding";
+    case "X": return "x11-forwarding";
+    case "T": return "no-tty";
+    case "J": return "jump-host";
     case "n": return "network";
     case "d": return "domain";
     case "s": return "dns-server";
@@ -235,6 +242,21 @@ public ParseResult parseArgs(string[] args)
             options.promisc = true;
             continue;
         }
+        if (option == "agent-forwarding")
+        {
+            options.sshAgentForwarding = true;
+            continue;
+        }
+        if (option == "x11-forwarding")
+        {
+            options.sshX11Forwarding = true;
+            continue;
+        }
+        if (option == "no-tty")
+        {
+            options.sshNoTty = true;
+            continue;
+        }
         if (!needsValue(option))
             return ParseResult(options, "unknown option -" ~ originalOption, false);
         if (value.length == 0 && index + 1 < args.length)
@@ -255,6 +277,9 @@ public ParseResult parseArgs(string[] args)
             || options.command == Command.dnsBruteforce)
             && !options.domain.length && positional.length)
         options.domain = positional[0];
+    if (options.command == Command.sftp && !options.sftpRemotePath
+            && positional.length > 1)
+        options.sftpRemotePath = positional[1];
     if (!options.hostname.length)
         options.hostname = options.host;
     return ParseResult(options, "", true);
@@ -286,6 +311,27 @@ private string assign(ref CliOptions options, string key, string value)
             break;
         case "command":
             options.sshCommand = value;
+            break;
+        case "jump-host":
+            options.sshJumpHost = value;
+            break;
+        case "local-forward":
+            options.sshLocalForward = value;
+            break;
+        case "remote-forward":
+            options.sshRemoteForward = value;
+            break;
+        case "dynamic-forward":
+            options.sshDynamicForward = value;
+            break;
+        case "proxy-command":
+            options.sshProxyCommand = value;
+            break;
+        case "ssh-option":
+            options.sshOptions ~= value;
+            break;
+        case "remote-path":
+            options.sftpRemotePath = value;
             break;
         case "network":
             options.network = value;
@@ -409,7 +455,8 @@ public void printUsage()
     writeln("  Monitoring: bandwidth-test, bandwidth-speedtest, bandwidth-monitor,");
     writeln("    bandwidth-history, bandwidth-limit, bandwidth-shaper, monitor-start,");
     writeln("    monitor-stop, monitor-status, monitor-alert, monitor-log, monitor-export");
-    writeln("  Security: ssh, security-ssh, security-http, security-ssl, security-smtp,");
+    writeln("  Remote access: ssh, security-ssh, sftp");
+    writeln("  Security: security-http, security-ssl, security-smtp,");
     writeln("    security-banner, security-dns, security-audit, security-scan");
     writeln("  Authorized stress testing: tcp-stress, http-stress, packet-flood,");
     writeln("    ping-flood, port-knocking, ddos");
@@ -660,8 +707,28 @@ public void printCommandUsage(Command command)
         flags = ["--user NAME, -u NAME      remote SSH user",
             "--port N, -p N            SSH port (default: 22)",
             "--identity FILE           private key file",
-            "--command CMD             run a remote command instead of a shell"];
+            "--command CMD             run a remote command instead of a shell",
+            "--jump-host HOST, -J HOST use a jump host",
+            "--local-forward SPEC       local port forward (L)",
+            "--remote-forward SPEC      remote port forward (R)",
+            "--dynamic-forward SPEC     SOCKS proxy (D)",
+            "--proxy-command CMD        custom proxy command",
+            "--ssh-option OPTION        pass an OpenSSH -o option (repeatable)",
+            "--agent-forwarding, -A     forward the SSH agent",
+            "--x11-forwarding, -X       enable X11 forwarding",
+            "--no-tty, -T              disable pseudo-terminal allocation"];
         example ~= " admin@example.com --identity ~/.ssh/id_ed25519";
+        break;
+    case Command.sftp:
+        usage ~= " HOST [REMOTE_PATH] [--user NAME] [--port N] [--identity FILE]";
+        description = "open an interactive SFTP session";
+        flags = ["--user NAME, -u NAME      remote SFTP user",
+            "--port N, -p N            SFTP/SSH port (default: 22)",
+            "--identity FILE           private key file",
+            "--remote-path PATH        open a remote path",
+            "--jump-host HOST, -J HOST use a jump host",
+            "--ssh-option OPTION        pass an OpenSSH -o option (repeatable)"];
+        example ~= " deploy@example.com /var/www --identity ~/.ssh/id_ed25519";
         break;
     case Command.securityHttp:
     case Command.securitySsl:
