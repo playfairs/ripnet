@@ -24,6 +24,11 @@ import buildinfo : versionString;
 
 int main(string[] args)
 {
+    if (args.length == 1)
+    {
+        printDefaultUsage();
+        return 0;
+    }
     auto parsed = parseArgs(args);
     if (!parsed.ok)
     {
@@ -36,7 +41,10 @@ int main(string[] args)
     auto options = parsed.options;
     if (options.command == Command.help || options.showHelp)
     {
-        printUsage();
+        if (options.showHelp && options.command != Command.help)
+            printCommandUsage(options.command);
+        else
+            printUsage();
         return 0;
     }
     if (options.command == Command.showVersion)

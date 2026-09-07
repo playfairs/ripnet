@@ -45,54 +45,54 @@ to review the available options. Some operations require elevated privileges, li
 .SH OPTIONS
 .TP
 .BR -h , --help
-Show help. When placed after a command, show the general command help currently available for that invocation.
+Show the command and flag reference.
 .TP
-.B --version
+.BR -v , --version
 Print the installed ripnet version.
 .TP
-.BI --interface\ NAME
+.BR -i\ NAME , --interface\ NAME
 Select a network interface.
 .TP
-.BI --host\ HOST
+.BR -H\ HOST , --host\ HOST
 Set the target host.
 .TP
-.BI --network\ CIDR
+.BR -n\ CIDR , --network\ CIDR
 Set the target network.
 .TP
-.BI --port\ N
+.BR -p\ N , --port\ N
 Set a target port.
 .TP
-.BI --start-port\ N
+.BR -sp\ N , --start-port\ N
 Set the first port for a range. The default is 1.
 .TP
-.BI --end-port\ N
+.BR -ep\ N , --end-port\ N
 Set the last port for a range. The default is 1024.
 .TP
-.BI --timeout\ MS
+.BR -t\ MS , --timeout\ MS
 Set the operation timeout in milliseconds. The default is 1000.
 .TP
-.BI --count\ N
+.BR -c\ N , --count\ N
 Set the probe count. The default is 4.
 .TP
-.BI --record-type\ TYPE
+.BR -r\ TYPE , --record-type\ TYPE
 Set the DNS record type. The default is A.
 .TP
-.BI --dns-server\ HOST
+.BR -s\ HOST , --dns-server\ HOST
 Select a DNS server.
 .TP
-.BI --wordlist\ FILE
+.BR -w\ FILE , --wordlist\ FILE
 Select a DNS brute-force wordlist.
 .TP
-.BI --protocol\ NAME
+.BR -P\ NAME , --protocol\ NAME
 Select a transport protocol.
 .TP
-.B --json
+.BR -j , --json
 Emit machine-readable output where supported.
 .TP
-.BR -v , --verbose
+.BR -V , --verbose
 Print additional diagnostic details.
 .TP
-.B --promisc
+.B -promisc, --promisc
 Request promiscuous packet capture.
 .SH EXAMPLES
 .nf
