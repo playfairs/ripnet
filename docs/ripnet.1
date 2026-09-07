@@ -1,0 +1,121 @@
+.TH RIPNET 1 "September 2026" "ripnet" "User Commands"
+.SH NAME
+ripnet \- network diagnostics, packet analysis, and authorized testing
+.SH SYNOPSIS
+.B ripnet
+.I command
+.RI [ target ]
+.RI [ options ]
+.br
+.B ripnet --help
+.br
+.B ripnet --version
+.SH DESCRIPTION
+.B ripnet
+is a command-line toolkit for network diagnostics, packet analysis, observability, discovery, and authorized load testing. Commands are grouped by workflow and can emit human-readable output or JSON where supported.
+.PP
+Use
+.B ripnet COMMAND --help
+to review the available options. Some operations require elevated privileges, libpcap support, or platform-specific adapters.
+.SH COMMAND FAMILIES
+.TP
+.B Interfaces and capture
+.BR list-interfaces , show-stats , capture
+.TP
+.B Reachability and routes
+.BR ping , ping-tcp , ping-udp , ping-sweep , traceroute , traceroute-tcp , traceroute-udp , traceroute-icmp
+.TP
+.B Scanning
+.BR scan , port-scan , network-scan , service-scan , os-fingerprint , udp-scan , syn-scan , fin-scan , xmas-scan , null-scan
+.TP
+.B DNS
+.BR dns-lookup , dns-reverse , dns-query , dns-server-test , dns-trace , dns-bruteforce , dns-zone-transfer , dnssec-verify , dns-cache-flush
+.TP
+.B Local discovery
+.BR arp-table , arp-scan , arp-request , arp-reply , arp-cache-add , arp-cache-delete , arp-spoof-detect , discovery-ping , discovery-arp , discovery-dns , discovery-mdns , discovery-llmnr , discovery-netbios , discovery-smb , discovery-http , discovery-ssl , discovery-snmp , discovery-upnp
+.TP
+.B System visibility
+.BR netstat , netstat-listening , netstat-route , netstat-process , netstat-interface , netstat-group , netstat-timer , scan-processes , route-table , route-get , route-trace , route-monitor
+.TP
+.B Firewall and monitoring
+.BR firewall-status , firewall-log , firewall-add , firewall-delete , firewall-flush , block-ip , unblock-ip , block-port , unblock-port , bandwidth-test , bandwidth-monitor , monitor-start , monitor-stop , monitor-status , monitor-alert , monitor-log , monitor-export
+.TP
+.B Security and authorized stress testing
+.BR security-ssh , security-http , security-ssl , security-smtp , security-banner , security-dns , security-audit , security-scan , tcp-stress , http-stress , packet-flood , ping-flood , port-knocking
+.SH OPTIONS
+.TP
+.BR -h , --help
+Show help. When placed after a command, show the general command help currently available for that invocation.
+.TP
+.B --version
+Print the installed ripnet version.
+.TP
+.BI --interface\ NAME
+Select a network interface.
+.TP
+.BI --host\ HOST
+Set the target host.
+.TP
+.BI --network\ CIDR
+Set the target network.
+.TP
+.BI --port\ N
+Set a target port.
+.TP
+.BI --start-port\ N
+Set the first port for a range. The default is 1.
+.TP
+.BI --end-port\ N
+Set the last port for a range. The default is 1024.
+.TP
+.BI --timeout\ MS
+Set the operation timeout in milliseconds. The default is 1000.
+.TP
+.BI --count\ N
+Set the probe count. The default is 4.
+.TP
+.BI --record-type\ TYPE
+Set the DNS record type. The default is A.
+.TP
+.BI --dns-server\ HOST
+Select a DNS server.
+.TP
+.BI --wordlist\ FILE
+Select a DNS brute-force wordlist.
+.TP
+.BI --protocol\ NAME
+Select a transport protocol.
+.TP
+.B --json
+Emit machine-readable output where supported.
+.TP
+.BR -v , --verbose
+Print additional diagnostic details.
+.TP
+.B --promisc
+Request promiscuous packet capture.
+.SH EXAMPLES
+.nf
+ripnet list-interfaces
+ripnet ping example.com --count 5
+ripnet scan 192.0.2.10 --start-port 1 --end-port 1024
+ripnet dns-query example.com --record-type MX
+ripnet service-scan 192.0.2.10 --port 22
+ripnet ping example.com --help
+.fi
+.SH EXIT STATUS
+.TP
+.B 0
+The command completed successfully, or help or version information was requested.
+.TP
+.B 2
+The command line was invalid or required an argument was missing.
+.TP
+.B 1
+The requested operation failed or is unavailable on the selected platform.
+.SH AUTHORIZATION
+Only scan, modify, or load-test systems and networks you are authorized to use. The authors do not endorse unauthorized access, disruption, or traffic generation.
+.SH SEE ALSO
+.BR pcap (3)
+.SH AUTHORS
+playfairs
