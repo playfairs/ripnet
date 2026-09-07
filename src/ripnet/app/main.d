@@ -15,6 +15,8 @@ import scanModule = ripnet.network.scan;
 import tracerouteModule = ripnet.network.traceroute;
 import targetModule = ripnet.network.target;
 import securityModule = ripnet.security.security;
+import sshModule = ripnet.security.ssh;
+import sftpModule = ripnet.security.sftp;
 import stressModule = ripnet.stress.stress;
 import firewallModule = ripnet.system.firewall;
 import netstatModule = ripnet.system.netstat;
@@ -247,9 +249,17 @@ int main(string[] args)
     case Command.monitorExport:
         return ripnet.monitoring.monitor.exportStats(options.interfaceName, options.exportPath);
     case Command.securitySsh:
-        return securityModule.connectSsh(options.host, options.sshUser,
+        return sshModule.connect(options.host, options.sshUser,
             options.port ? options.port : 22, options.sshIdentity,
-            options.sshCommand);
+            options.sshCommand, options.sshJumpHost, options.sshLocalForward,
+            options.sshRemoteForward, options.sshDynamicForward,
+            options.sshProxyCommand, options.sshOptions,
+            options.sshAgentForwarding, options.sshX11Forwarding,
+            options.sshNoTty);
+        case Command.sftp:
+        return sftpModule.connect(options.host, options.sshUser,
+            options.port ? options.port : 22, options.sshIdentity,
+            options.sftpRemotePath, options.sshJumpHost, options.sshOptions);
     case Command.securityHttp:
         return printProbe(options.command,
                 securityModule.http(options.host, options.port ? options.port : 80));
@@ -356,6 +366,7 @@ private bool requiresTarget(CliOptions options)
     case Command.routeTrace:
     case Command.routeMonitor:
     case Command.securitySsh:
+    case Command.sftp:
     case Command.securityHttp:
     case Command.securitySsl:
     case Command.securitySmtp:
