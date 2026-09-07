@@ -36,6 +36,8 @@ ripnet_sources = files(
   'src/ripnet/platform/command.d',
   'src/ripnet/platform/interfaces.d',
   'src/ripnet/security/security.d',
+  'src/ripnet/security/ssh.d',
+  'src/ripnet/security/sftp.d',
   'src/ripnet/stress/stress.d',
   'src/ripnet/system/firewall.d',
   'src/ripnet/system/netstat.d',
@@ -59,6 +61,7 @@ test('cli-version-short', ripnet_executable, args: ['-v'])
 test('cli-short-options', ripnet_executable,
   args: ['ping', 'example.com', '-p', '443', '--help'])
 test('cli-ssh-help', ripnet_executable, args: ['ssh', '--help'])
+test('cli-sftp-help', ripnet_executable, args: ['sftp', '--help'])
 test('cli-command-help', ripnet_executable, args: ['ping', 'example.com', '--help'])
 test('ddos-easter-egg', ripnet_executable, args: ['ddos'])
 test('scan-missing-target', ripnet_executable, args: ['scan'], should_fail: true)
