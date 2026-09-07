@@ -9,15 +9,14 @@ Network diagnostics, packet analysis, observability, and authorized load-testing
 - Linux, macOS, or BSD
 - an LLVM D compiler (`ldc2`)
 - libpcap
-- Meson
-- Ninja
+- Nox
 
 ## Installation
 
 ```bash
-meson setup build
-meson compile -C build
-sudo meson install -C build
+nox setup build
+nox build build -j8
+sudo nox install
 ```
 
 ## Usage
@@ -28,15 +27,19 @@ ripnet --help
 
 ## Development
 
-The primary build system is Meson. The repository also provides a Nix
+The primary build system is Nox. The repository also provides a Nix
 development shell with the D toolchain used by the build:
 
 ```bash
 nix develop
-meson setup build
-meson compile -C build
-meson test -C build --print-errorlogs
+nox setup build
+nox build build -j8
+nox install --prefix "$HOME/.local"
 ```
+
+The `nox.build` file declares the D executable, source graph, project metadata,
+and libpcap linker dependency. `src/ripnet/buildinfo.d` provides the version
+module consumed by the application and is kept in sync with `VERSION`.
 
 The implementation is organized as D modules by responsibility:
 

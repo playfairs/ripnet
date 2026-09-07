@@ -1,0 +1,44 @@
+// Ripnet is built by Nox using the D Rider.
+
+project "ripnet" {
+    version = file("./VERSION")
+    description = "Network diagnostics, packet analysis, observability, and authorized load-testing toolkit."
+    license = "Unlicense"
+    edition = "1"
+    dependencies = ["libpcap"]
+
+    d_executable "ripnet" {
+        sources = [
+            "src/ripnet/app/cli.d",
+            "src/ripnet/app/main.d",
+            "src/ripnet/model.d",
+            "src/ripnet/output.d",
+            "src/ripnet/network/arp.d",
+            "src/ripnet/network/capture.d",
+            "src/ripnet/network/dns.d",
+            "src/ripnet/network/discovery.d",
+            "src/ripnet/network/packet.d",
+            "src/ripnet/network/probe.d",
+            "src/ripnet/network/route.d",
+            "src/ripnet/network/scan.d",
+            "src/ripnet/network/target.d",
+            "src/ripnet/network/traceroute.d",
+            "src/ripnet/monitoring/bandwidth.d",
+            "src/ripnet/monitoring/monitor.d",
+            "src/ripnet/monitoring/stats.d",
+            "src/ripnet/platform/command.d",
+            "src/ripnet/platform/interfaces.d",
+            "src/ripnet/security/security.d",
+            "src/ripnet/security/ssh.d",
+            "src/ripnet/security/sftp.d",
+            "src/ripnet/stress/stress.d",
+            "src/ripnet/system/firewall.d",
+            "src/ripnet/system/netstat.d",
+            "src/ripnet/system/process.d",
+            "src/ripnet/buildinfo.d",
+        ]
+        include_dirs = ["src"]
+        linker_flags = ["-lpcap"]
+        install = true
+    }
+}

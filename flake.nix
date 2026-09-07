@@ -7,6 +7,7 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nox.url = "github:playfairs/nox";
   };
 
   outputs =
@@ -14,6 +15,7 @@
       self,
       nixpkgs,
       treefmt-nix,
+      nox,
     }:
     let
       systems = [
@@ -37,7 +39,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          default = pkgs.callPackage ./nix/buildPackage.nix { };
+          default = pkgs.callPackage ./nix/buildPackage.nix { inherit nox; };
         }
       );
 
@@ -48,19 +50,15 @@
         in
         {
           default = pkgs.mkShell {
-            buildInputs =
-              with pkgs;
-              [
-                ldc
-                gdb
-                meson
-                ninja
-                pkg-config
-                libpcap
-              ]
-              ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-                valgrind
-              ];
+            buildInputs = [
+              pkgs.ldc
+              pkgs.gdb
+              nox.packages.${system}.default
+              pkgs.pkg-config
+              pkgs.libpcap
+            ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+              pkgs.valgrind
+            ];
           };
         }
       );
