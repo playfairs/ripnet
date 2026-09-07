@@ -28,11 +28,12 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
-          output="$(nix build .#default --no-link --print-out-paths)"
-          test -x "$output/bin/ripnet"
-          test "$("$output/bin/ripnet" --version)" = "ripnet $version"
+          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          output="build-ci/release/ripnet/ripnet"
+          test -x "$output"
+          test "$("$output" --version)" = "ripnet $version"
           mkdir -p dist
-          cp "$output/bin/ripnet" "dist/ripnet-v${version}-linux-x86_64"
+          cp "$output" "dist/ripnet-v${version}-linux-x86_64"
           test -x "dist/ripnet-v${version}-linux-x86_64"
 
       - name: Upload executable
@@ -57,11 +58,12 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
-          output="$(nix build .#default --no-link --print-out-paths)"
-          test -x "$output/bin/ripnet"
-          test "$($output/bin/ripnet --version)" = "ripnet $version"
+          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          output="build-ci/release/ripnet/ripnet"
+          test -x "$output"
+          test "$("$output" --version)" = "ripnet $version"
           mkdir -p dist
-          cp "$output/bin/ripnet" "dist/ripnet-v${version}-macos-arm64"
+          cp "$output" "dist/ripnet-v${version}-macos-arm64"
           test -x "dist/ripnet-v${version}-macos-arm64"
 
       - name: Upload executable
