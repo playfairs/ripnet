@@ -90,6 +90,7 @@ public enum Command
     monitorLog,
     monitorExport,
     securitySsh,
+    sftp,
     securityHttp,
     securitySsl,
     securitySmtp,
@@ -133,6 +134,16 @@ public struct CliOptions
     string sshUser;
     string sshIdentity;
     string sshCommand;
+    string sshJumpHost;
+    string sshLocalForward;
+    string sshRemoteForward;
+    string sshDynamicForward;
+    string sshProxyCommand;
+    string[] sshOptions;
+    string sftpRemotePath;
+    bool sshAgentForwarding;
+    bool sshX11Forwarding;
+    bool sshNoTty;
     string network;
     string domain;
     string dnsServer;
