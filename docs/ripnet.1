@@ -41,7 +41,7 @@ to review the available options. Some operations require elevated privileges, li
 .BR firewall-status , firewall-log , firewall-add , firewall-delete , firewall-flush , block-ip , unblock-ip , block-port , unblock-port , bandwidth-test , bandwidth-monitor , monitor-start , monitor-stop , monitor-status , monitor-alert , monitor-log , monitor-export
 .TP
 .B Security and authorized stress testing
-.BR security-ssh , security-http , security-ssl , security-smtp , security-banner , security-dns , security-audit , security-scan , tcp-stress , http-stress , packet-flood , ping-flood , port-knocking
+.BR ssh , security-ssh , sftp , security-http , security-ssl , security-smtp , security-banner , security-dns , security-audit , security-scan , tcp-stress , http-stress , packet-flood , ping-flood , port-knocking
 .SH OPTIONS
 .TP
 .BR -h , --help
@@ -86,6 +86,42 @@ Select a DNS brute-force wordlist.
 .BR -P\ NAME , --protocol\ NAME
 Select a transport protocol.
 .TP
+.BR -u\ NAME , --user\ NAME
+Set the remote SSH or SFTP user.
+.TP
+.BI --identity\ FILE
+Use a private key file.
+.TP
+.BR -J\ HOST , --jump-host\ HOST
+Connect through a jump host.
+.TP
+.BI --local-forward\ SPEC
+Create a local TCP forwarding rule, equivalent to OpenSSH -L.
+.TP
+.BI --remote-forward\ SPEC
+Create a remote TCP forwarding rule, equivalent to OpenSSH -R.
+.TP
+.BI --dynamic-forward\ SPEC
+Create a SOCKS proxy, equivalent to OpenSSH -D.
+.TP
+.BI --proxy-command\ CMD
+Use a custom OpenSSH ProxyCommand.
+.TP
+.BI --ssh-option\ OPTION
+Pass an OpenSSH -o option. May be repeated.
+.TP
+.BR -A , --agent-forwarding
+Forward the SSH agent.
+.TP
+.BR -X , --x11-forwarding
+Enable X11 forwarding.
+.TP
+.BR -T , --no-tty
+Disable pseudo-terminal allocation.
+.TP
+.BI --remote-path\ PATH
+Open an SFTP session at a remote path.
+.TP
 .BR -j , --json
 Emit machine-readable output where supported.
 .TP
@@ -102,6 +138,9 @@ ripnet scan 192.0.2.10 --start-port 1 --end-port 1024
 ripnet dns-query example.com --record-type MX
 ripnet service-scan 192.0.2.10 --port 22
 ripnet ping example.com --help
+ripnet ssh git@github.com --identity ~/.ssh/id_ed25519
+ripnet ssh admin@example.com -L 8080:localhost:80
+ripnet sftp deploy@example.com /var/www --identity ~/.ssh/id_ed25519
 .fi
 .SH EXIT STATUS
 .TP
