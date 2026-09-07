@@ -699,7 +699,7 @@ public void printCommandUsage(Command command)
     case Command.discoverySmb:
     case Command.discoveryHttp:
     case Command.discoverySsl:
-        description = "run an unavailable discovery adapter";
+           description = "run a protocol discovery adapter";
         break;
     case Command.securitySsh:
         usage ~= " HOST [--user NAME] [--port N] [--identity FILE] [--command CMD]";

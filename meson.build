@@ -20,6 +20,7 @@ ripnet_sources = files(
   'src/ripnet/app/cli.d',
   'src/ripnet/app/main.d',
   'src/ripnet/model.d',
+  'src/ripnet/output.d',
   'src/ripnet/network/arp.d',
   'src/ripnet/network/capture.d',
   'src/ripnet/network/dns.d',
@@ -79,3 +80,15 @@ ripnet_util_tests = executable(
 )
 
 test('packet', ripnet_util_tests)
+
+ripnet_cli_tests = executable(
+  'ripnet-cli-tests',
+  files(
+    'src/ripnet/model.d',
+    'src/ripnet/app/cli.d',
+    'tests/cli_test.d',
+  ),
+  include_directories: include_directories('src'),
+)
+
+test('cli-parser', ripnet_cli_tests)

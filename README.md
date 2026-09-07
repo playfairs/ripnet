@@ -45,6 +45,7 @@ The implementation is organized as D modules by responsibility:
   parsing, traceroute, and libpcap capture
 - `src/ripnet/system`: firewall, netstat, and process adapters
 - `src/ripnet/monitoring`: interface counters, bandwidth, and monitor state
+
 - `src/ripnet/security` and `src/ripnet/stress`: higher-level checks and load
   testing
 - `src/ripnet/platform`: OS command and interface adapters

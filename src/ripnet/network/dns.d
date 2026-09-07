@@ -2,6 +2,7 @@ module ripnet.network.dns;
 
 import ripnet.model;
 import ripnet.network.target : invalidTargetMessage, isAddressLike;
+import ripnet.platform.command : CommandResult, run;
 import std.datetime.stopwatch : StopWatch, AutoStart;
 import std.socket : Address, getAddress;
 import std.string : splitLines, strip, split;
@@ -47,8 +48,71 @@ public string reverseLookup(string address)
 
 public string query(string hostname, string recordType)
 {
-    auto result = lookup(hostname);
-    return result.addresses.join("\n");
+    auto result = runDig(["+short", recordType, hostname]);
+    if (result.success)
+        return result.output;
+    if (recordType == "A")
+        return lookup(hostname).addresses.join("\n");
+    return "";
+}
+
+public int trace(string hostname)
+{
+    return printDig(["+trace", hostname]);
+}
+
+public int zoneTransfer(string hostname)
+{
+    auto nameservers = runDig(["+short", "NS", hostname]);
+    if (!nameservers.success || !nameservers.output.length)
+    {
+        writeln("dns-zone-transfer: no authoritative nameserver found");
+        return -1;
+    }
+
+    foreach (name; nameservers.output.splitLines)
+    {
+        auto server = name.strip;
+        if (!server.length)
+            continue;
+        auto result = runDig(["AXFR", hostname, "@" ~ server]);
+        if (result.success && result.output.length)
+        {
+            writeln(result.output);
+            return 0;
+        }
+    }
+    writeln("dns-zone-transfer: transfer refused or unavailable");
+    return -1;
+}
+
+public int verifyDnssec(string hostname)
+{
+    auto result = runDig(["+dnssec", "+multi", "DNSKEY", hostname]);
+    if (!result.success)
+    {
+        writeln("dnssec-verify: dig is unavailable or the query failed");
+        return -1;
+    }
+    writeln(result.output.length ? result.output : "dnssec-verify: no DNSKEY records found");
+    return result.output.length ? 0 : -1;
+}
+
+private CommandResult runDig(string[] arguments)
+{
+    return run("dig", arguments);
+}
+
+private int printDig(string[] arguments)
+{
+    auto result = runDig(arguments);
+    if (!result.success)
+    {
+        writeln("dns: dig is unavailable or the query failed");
+        return -1;
+    }
+    writeln(result.output);
+    return 0;
 }
 
 public bool serverTest(string server, out double averageMs)

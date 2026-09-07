@@ -16,16 +16,12 @@ public NetworkInterface stats(string name)
 public void printInterfaces(bool json = false)
 {
     import std.stdio : writefln, writeln;
+    import ripnet.output : interfacesJson;
 
     auto values = listInterfaces();
     if (json)
     {
-        writeln("[");
-        foreach (index, item; values)
-            writefln("  {\"name\":\"%s\",\"mac\":\"%s\",\"rx_bytes\":%d,\"tx_bytes\":%d}%s", item.name,
-                    item.mac.value, item.rxBytes, item.txBytes, index + 1 == values.length ? ""
-                    : ",");
-        writeln("]");
+        writeln(interfacesJson(values));
         return;
     }
     foreach (item; values)

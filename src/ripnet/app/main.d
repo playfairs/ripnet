@@ -79,11 +79,11 @@ int main(string[] args)
     case Command.ping:
     case Command.pingTcp:
         return printProbe(options.command,
-                probeModule.tcpProbe(options.host, options.port ? options.port : 80));
+                probeModule.tcpProbe(options.host, options.port ? options.port : 80), options.json);
     case Command.pingUdp:
         return printProbe(options.command,
                 probeModule.udpProbe(options.host, options.port ? options.port
-                    : 53, options.timeoutMs));
+                : 53, options.timeoutMs), options.json);
     case Command.pingSweep:
         return printScans(scanModule.networkScan(options.network.length
                 ? options.network : options.host, 0, options.timeoutMs), options.json);
@@ -100,23 +100,27 @@ int main(string[] args)
         return printScans(scanModule.networkScan(options.network.length
                 ? options.network : options.host, options.port, options.timeoutMs), options.json);
     case Command.osFingerprint:
-        writeln("OS fingerprint: Unknown");
-        return 0;
+        return scanModule.osFingerprint(options.host);
     case Command.vulnerabilityScan:
-        printCommandError(options.command,
-                "vulnerability scanning is unavailable for this target");
-        return -1;
+        return scanModule.vulnerabilityScan(options.host);
     case Command.serviceScan:
         return printScan(scanModule.serviceScan(options.host,
-                options.port, options.timeoutMs));
+            options.port, options.timeoutMs), options.json);
     case Command.dnsLookup:
-        return printDns(options.command, dnsModule.lookup(options.host));
+        return printDns(options.command, dnsModule.lookup(options.host), options.json);
     case Command.dnsReverse:
         writeln(dnsModule.reverseLookup(options.ipAddress.length
                 ? options.ipAddress : options.host));
         return 0;
     case Command.dnsQuery:
-        writeln(dnsModule.query(options.host, options.recordType));
+        auto answer = dnsModule.query(options.host, options.recordType);
+        if (options.json)
+        {
+            import ripnet.output : dnsQuery;
+            writeln(dnsQuery(options.host, options.recordType, answer));
+        }
+        else
+            writeln(answer);
         return 0;
     case Command.dnsServerTest:
         double average;
@@ -132,13 +136,20 @@ int main(string[] args)
     case Command.dnsCacheFlush:
         return dnsModule.cacheFlush();
     case Command.dnsTrace:
-    case Command.dnssecVerify:
+        return dnsModule.trace(options.host);
     case Command.dnsZoneTransfer:
-        printCommandError(options.command,
-                "operation is not supported by the selected platform adapter");
-        return -1;
+        return dnsModule.zoneTransfer(options.host);
+    case Command.dnssecVerify:
+        return dnsModule.verifyDnssec(options.host);
     case Command.arpTable:
-        foreach (entry; arpModule.table())
+        auto arpEntries = arpModule.table();
+        if (options.json)
+        {
+            import ripnet.output : arpEntriesJson;
+            writeln(arpEntriesJson(arpEntries));
+            return 0;
+        }
+        foreach (entry; arpEntries)
             writefln("%-16s %-18s %s", entry.ip.value, entry.mac.value, entry.interfaceName);
         return 0;
     case Command.arpScan:
@@ -174,14 +185,22 @@ int main(string[] args)
     case Command.discoverySmb:
     case Command.discoveryHttp:
     case Command.discoverySsl:
-        return discoveryModule.unsupported(commandName(options.command));
+        return discoveryModule.nmapDiscovery(commandName(options.command),
+            options.host.length ? options.host : options.network, options.interfaceName);
     case Command.netstat:
         return netstatModule.print(false, options.json);
     case Command.netstatListening:
         return netstatModule.print(true, options.json);
     case Command.netstatRoute:
     case Command.routeTable:
-        foreach (item; routeModule.table())
+        auto routes = routeModule.table();
+        if (options.json)
+        {
+            import ripnet.output : routesJson;
+            writeln(routesJson(routes));
+            return 0;
+        }
+        foreach (item; routes)
             writefln("%s via %s dev %s", item.destination, item.gateway, item.interfaceName);
         return 0;
     case Command.netstatProcess:
@@ -262,16 +281,16 @@ int main(string[] args)
             options.sftpRemotePath, options.sshJumpHost, options.sshOptions);
     case Command.securityHttp:
         return printProbe(options.command,
-                securityModule.http(options.host, options.port ? options.port : 80));
+                securityModule.http(options.host, options.port ? options.port : 80), options.json);
     case Command.securitySsl:
         return printProbe(options.command,
-                securityModule.ssl(options.host, options.port ? options.port : 443));
+                securityModule.ssl(options.host, options.port ? options.port : 443), options.json);
     case Command.securitySmtp:
         return printProbe(options.command,
-                securityModule.smtp(options.host, options.port ? options.port : 25));
+                securityModule.smtp(options.host, options.port ? options.port : 25), options.json);
     case Command.securityBanner:
         return printProbe(options.command,
-                securityModule.banner(options.host, options.port));
+                securityModule.banner(options.host, options.port), options.json);
     case Command.securityAudit:
     case Command.securityScan:
     case Command.securityDns:
@@ -384,8 +403,14 @@ private bool requiresTarget(CliOptions options)
     }
 }
 
-private int printProbe(Command command, PingResult result)
+private int printProbe(Command command, PingResult result, bool json = false)
 {
+    if (json)
+    {
+        import ripnet.output : ping;
+        writeln(ping(result));
+        return result.success ? 0 : -1;
+    }
     if (result.success)
         writefln("%s: reachable (%.2f ms)", result.host, result.latencyMs);
     else
@@ -393,8 +418,14 @@ private int printProbe(Command command, PingResult result)
     return result.success ? 0 : -1;
 }
 
-private int printDns(Command command, DnsResult result)
+private int printDns(Command command, DnsResult result, bool json = false)
 {
+    if (json)
+    {
+        import ripnet.output : dns;
+        writeln(dns(result));
+        return result.success ? 0 : -1;
+    }
     if (!result.success)
     {
         printCommandError(command, result.error);
@@ -405,8 +436,14 @@ private int printDns(Command command, DnsResult result)
     return 0;
 }
 
-private int printScan(ScanResult result)
+private int printScan(ScanResult result, bool json = false)
 {
+    if (json)
+    {
+        import ripnet.output : scan;
+        writeln(scan(result));
+        return result.open ? 0 : -1;
+    }
     writefln("%s:%d %s", result.host, result.port, result.open ? "open" : "closed");
     return result.open ? 0 : -1;
 }
@@ -415,13 +452,8 @@ private int printScans(ScanResult[] results, bool json = false)
 {
     if (json)
     {
-        writeln("[");
-        foreach (index, result; results)
-        {
-            writefln("  {\"host\":\"%s\",\"port\":%d,\"open\":%s}%s", result.host, result.port,
-                    result.open ? "true" : "false", index + 1 == results.length ? "" : ",");
-        }
-        writeln("]");
+        import ripnet.output : scans;
+        writeln(scans(results));
         return 0;
     }
     foreach (result; results)

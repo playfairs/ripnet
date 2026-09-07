@@ -1,6 +1,7 @@
 module ripnet.network.scan;
 
 import ripnet.model;
+import ripnet.platform.command : run;
 import ripnet.network.probe;
 import std.algorithm : map;
 import std.array : array;
@@ -112,4 +113,30 @@ private string formatAddress(uint address)
 public ScanResult[] scanVariant(string host, ushort firstPort, ushort lastPort, uint timeoutMs = 1000)
 {
     return scanPorts(host, firstPort, lastPort, timeoutMs);
+}
+
+public int osFingerprint(string host)
+{
+    return printNmap(["-O", "--osscan-guess", host],
+            "os-fingerprint: nmap is unavailable or the scan failed");
+}
+
+public int vulnerabilityScan(string host)
+{
+    return printNmap(["--script", "vuln", host],
+            "vuln-scan: nmap is unavailable or the scan failed");
+}
+
+private int printNmap(string[] arguments, string failure)
+{
+    import std.stdio : writeln;
+
+    auto result = run("nmap", arguments);
+    if (!result.success)
+    {
+        writeln(failure);
+        return -1;
+    }
+    writeln(result.output);
+    return 0;
 }

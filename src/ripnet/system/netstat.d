@@ -20,8 +20,14 @@ public int print(bool listening = false, bool json = false)
         return -1;
     }
 
-    foreach (line; result.output.splitLines)
-        writeln(line);
+    if (json)
+    {
+        import ripnet.output : lines;
+        writeln(lines(result.output.splitLines));
+    }
+    else
+        foreach (line; result.output.splitLines)
+            writeln(line);
     return 0;
 }
 
