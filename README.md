@@ -42,11 +42,11 @@ The implementation is organized as D modules by responsibility:
 
 - `src/ripnet/app`: argument parsing and command dispatch
 - `src/ripnet/network`: DNS, probes, scans, routes, ARP, discovery, packet
-	parsing, traceroute, and libpcap capture
+  parsing, traceroute, and libpcap capture
 - `src/ripnet/system`: firewall, netstat, and process adapters
 - `src/ripnet/monitoring`: interface counters, bandwidth, and monitor state
 - `src/ripnet/security` and `src/ripnet/stress`: higher-level checks and load
-	testing
+  testing
 - `src/ripnet/platform`: OS command and interface adapters
 
 There are no C or C++ implementation files in the application. The only
