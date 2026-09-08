@@ -6,6 +6,7 @@ project "ripnet" {
     license = "Unlicense"
     edition = "1"
     dependencies = ["libpcap"]
+    version_files = ["VERSION"]
 
     d_executable "ripnet" {
         sources = [
