@@ -2,11 +2,11 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1788614874,
-        "narHash": "sha256-7QYjT2vHLuX9Z1pdxHXDKCbh1CR3D/2rywB9Tx0MPRg=",
+        "lastModified": 1788752844,
+        "narHash": "sha256-VaWGJ6+cIYN2erfSecbRV+4ljI185Ty2wUrXyvQbgOw=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+        "rev": "dc5d91f840324650bac8c379428c7037a416959a",
         "type": "github"
       },
       "original": {
@@ -54,15 +54,16 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788804783,
-        "narHash": "sha256-4duFI0uiNLs6o5zKPWKm1rLJ9eNrpTyZxrOCF+yH/+Y=",
+        "lastModified": 1788871618,
+        "narHash": "sha256-3dRlegRSHw9Dyi/vg3czlZluuJ3H9YMezrbi0iDla9s=",
         "owner": "playfairs",
         "repo": "nox",
-        "rev": "39b8b4b1248978f666788d380f32c7361b0b5d76",
+        "rev": "6c33f732dbd0b79f02311ed194a9d4cc0033e8a3",
         "type": "github"
       },
       "original": {
         "owner": "playfairs",
+        "ref": "dev",
         "repo": "nox",
         "type": "github"
       }
