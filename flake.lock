@@ -54,11 +54,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788871618,
-        "narHash": "sha256-3dRlegRSHw9Dyi/vg3czlZluuJ3H9YMezrbi0iDla9s=",
+        "lastModified": 1788900349,
+        "narHash": "sha256-sz5CL9pyQUNa5PT5QI560upz0bbe35vedn0BzGnqd+w=",
         "owner": "playfairs",
         "repo": "nox",
-        "rev": "6c33f732dbd0b79f02311ed194a9d4cc0033e8a3",
+        "rev": "cc2a3b79816da7f73042a0744f6553447e1ac6a7",
         "type": "github"
       },
       "original": {
