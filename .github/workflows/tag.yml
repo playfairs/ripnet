@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
-          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          nix develop --command bash -lc 'nox setup build-ci --release && nox compile -C build-ci -j2'
           output="build-ci/release/ripnet/ripnet"
           test -x "$output"
           test "$("$output" --version)" = "ripnet $version"
@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat VERSION)"
-          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          nix develop --command bash -lc 'nox setup build-ci --release && nox compile -C build-ci -j2'
           output="build-ci/release/ripnet/ripnet"
           test -x "$output"
           test "$("$output" --version)" = "ripnet $version"

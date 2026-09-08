@@ -62,7 +62,7 @@ jobs:
           VERSION: ${{ needs.validate-release.outputs.version }}
         run: |
           set -euo pipefail
-          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          nix develop --command bash -lc 'nox setup build-ci --release && nox compile -C build-ci -j2'
           output="build-ci/release/ripnet/ripnet"
           test -x "$output"
           test "$("$output" --version)" = "ripnet $VERSION"
@@ -96,7 +96,7 @@ jobs:
           VERSION: ${{ needs.validate-release.outputs.version }}
         run: |
           set -euo pipefail
-          nix develop --command bash -lc 'nox setup build-ci --release && nox build build-ci -j2'
+          nix develop --command bash -lc 'nox setup build-ci --release && nox compile -C build-ci -j2'
           output="build-ci/release/ripnet/ripnet"
           test -x "$output"
           test "$("$output" --version)" = "ripnet $VERSION"
