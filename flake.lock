@@ -63,7 +63,6 @@
       },
       "original": {
         "owner": "playfairs",
-        "ref": "dev",
         "repo": "nox",
         "type": "github"
       }

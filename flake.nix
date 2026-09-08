@@ -7,7 +7,7 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nox.url = "github:playfairs/nox/dev";
+    nox.url = "github:playfairs/nox";
   };
 
   outputs =
