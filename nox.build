@@ -1,14 +1,17 @@
-// Ripnet is built by Nox using the D Rider.
-
 project "ripnet" {
-    version = file("./VERSION")
     description = "Network diagnostics, packet analysis, observability, and authorized load-testing toolkit."
-    license = "Unlicense"
+    repository = "https://github.com/playfairs/ripnet"
+    website = "https://ripnet.cc"
+    authors = ["playfairs"]
+    maintainers = ["playfairs <root@playfairs.cc>"]
+
+    version = file("./VERSION")
+    license = file("./LICENSE")
     edition = "1"
     dependencies = ["libpcap"]
     version_files = ["VERSION"]
 
-    d_executable "ripnet" {
+    executable.d "ripnet" {
         sources = [
             "src/ripnet/app/cli.d",
             "src/ripnet/app/main.d",
