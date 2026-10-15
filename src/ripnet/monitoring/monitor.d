@@ -9,15 +9,19 @@ private MonitorSnapshot snapshot;
 
 public int start(string interfaceName)
 {
-    running = true;
-    snapshot.current = BandwidthStats(interfaceName: interfaceName);
-    return 0;
+    import std.stdio : stderr, writeln;
+
+    stderr.writeln(
+            "monitor-start: continuous monitoring is not implemented; use monitor-status for a one-shot measurement");
+    return 1;
 }
 
 public int stop()
 {
-    running = false;
-    return 0;
+    import std.stdio : stderr, writeln;
+
+    stderr.writeln("monitor-stop: no background monitor is available to stop");
+    return 1;
 }
 
 public MonitorSnapshot status(string interfaceName)
