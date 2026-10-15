@@ -18,6 +18,8 @@ import securityModule = ripnet.security.security;
 import sshModule = ripnet.security.ssh;
 import sftpModule = ripnet.security.sftp;
 import stressModule = ripnet.stress.stress;
+import httpClient = ripnet.http.client;
+import httpBulkModule = ripnet.http.bulk;
 import firewallModule = ripnet.system.firewall;
 import netstatModule = ripnet.system.netstat;
 import processModule = ripnet.system.process;
@@ -69,6 +71,21 @@ int main(string[] args)
         printCommandError(options.command, targetModule.invalidTargetMessage(options.host));
         return 2;
     }
+    if (options.command == Command.networkScan || options.command == Command.pingSweep)
+    {
+        auto network = options.network.length ? options.network : options.host;
+        auto error = targetModule.ipv4CidrError(network);
+        if (error.length)
+        {
+            printCommandError(options.command, error);
+            return 2;
+        }
+    }
+    if (options.command == Command.networkScan && options.port == 0)
+    {
+        printCommandError(options.command, "--port is required for TCP port-state results");
+        return 2;
+    }
 
     final switch (options.command)
     {
@@ -83,10 +100,25 @@ int main(string[] args)
     case Command.pingUdp:
         return printProbe(options.command,
                 probeModule.udpProbe(options.host, options.port ? options.port
-                : 53, options.timeoutMs), options.json);
+                    : 53, options.timeoutMs), options.json);
     case Command.pingSweep:
-        return printScans(scanModule.networkScan(options.network.length
-                ? options.network : options.host, 0, options.timeoutMs), options.json);
+        {
+            auto hosts = discoveryModule.ping(options.network.length
+                    ? options.network : options.host, options.timeoutMs);
+            if (options.json)
+            {
+                string[] addresses;
+                foreach (host; hosts)
+                    addresses ~= host.address;
+                import ripnet.output : lines;
+
+                writeln(lines(addresses));
+            }
+            else
+                foreach (host; hosts)
+                    writeln(host.address);
+            return 0;
+        }
     case Command.scan:
     case Command.portScan:
     case Command.udpScan:
@@ -105,9 +137,10 @@ int main(string[] args)
         return scanModule.vulnerabilityScan(options.host);
     case Command.serviceScan:
         return printScan(scanModule.serviceScan(options.host,
-            options.port, options.timeoutMs), options.json);
+                options.port, options.timeoutMs), options.json);
     case Command.dnsLookup:
-        return printDns(options.command, dnsModule.lookup(options.host), options.json);
+        return printDns(options.command,
+                dnsModule.lookup(options.host), options.json);
     case Command.dnsReverse:
         writeln(dnsModule.reverseLookup(options.ipAddress.length
                 ? options.ipAddress : options.host));
@@ -117,6 +150,7 @@ int main(string[] args)
         if (options.json)
         {
             import ripnet.output : dnsQuery;
+
             writeln(dnsQuery(options.host, options.recordType, answer));
         }
         else
@@ -146,6 +180,7 @@ int main(string[] args)
         if (options.json)
         {
             import ripnet.output : arpEntriesJson;
+
             writeln(arpEntriesJson(arpEntries));
             return 0;
         }
@@ -168,7 +203,7 @@ int main(string[] args)
     case Command.arpSpoofDetect:
         printCommandError(options.command,
                 "ARP spoof detection requires packet capture privileges");
-        return 0;
+        return 1;
     case Command.discoveryPing:
         foreach (host; discoveryModule.ping(options.network))
             writeln(host.address);
@@ -186,7 +221,7 @@ int main(string[] args)
     case Command.discoveryHttp:
     case Command.discoverySsl:
         return discoveryModule.nmapDiscovery(commandName(options.command),
-            options.host.length ? options.host : options.network, options.interfaceName);
+                options.host.length ? options.host : options.network, options.interfaceName);
     case Command.netstat:
         return netstatModule.print(false, options.json);
     case Command.netstatListening:
@@ -197,6 +232,7 @@ int main(string[] args)
         if (options.json)
         {
             import ripnet.output : routesJson;
+
             writeln(routesJson(routes));
             return 0;
         }
@@ -238,7 +274,7 @@ int main(string[] args)
     case Command.firewallLog:
         printCommandError(options.command,
                 "firewall logging is platform-managed");
-        return 0;
+        return 1;
     case Command.bandwidthTest:
     case Command.bandwidthMonitor:
         import ripnet.monitoring.bandwidth : measure, print;
@@ -269,19 +305,104 @@ int main(string[] args)
         return ripnet.monitoring.monitor.exportStats(options.interfaceName, options.exportPath);
     case Command.securitySsh:
         return sshModule.connect(options.host, options.sshUser,
-            options.port ? options.port : 22, options.sshIdentity,
-            options.sshCommand, options.sshJumpHost, options.sshLocalForward,
-            options.sshRemoteForward, options.sshDynamicForward,
-            options.sshProxyCommand, options.sshOptions,
-            options.sshAgentForwarding, options.sshX11Forwarding,
-            options.sshNoTty);
-        case Command.sftp:
+                options.port ? options.port : 22, options.sshIdentity, options.sshCommand, options.sshJumpHost,
+                options.sshLocalForward, options.sshRemoteForward,
+                options.sshDynamicForward, options.sshProxyCommand, options.sshOptions,
+                options.sshAgentForwarding, options.sshX11Forwarding, options.sshNoTty);
+    case Command.sftp:
         return sftpModule.connect(options.host, options.sshUser,
-            options.port ? options.port : 22, options.sshIdentity,
-            options.sftpRemotePath, options.sshJumpHost, options.sshOptions);
+                options.port ? options.port : 22, options.sshIdentity,
+                options.sftpRemotePath, options.sshJumpHost, options.sshOptions);
+    case Command.httpRequest:
+        {
+            auto request = makeHttpRequest(options);
+            auto response = httpClient.perform(request);
+            if (options.httpOutputFile.length && response.transportSuccess)
+            {
+                import std.file : write;
+
+                try
+                    write(options.httpOutputFile, response.body);
+                catch (Exception exception)
+                {
+                    printCommandError(options.command,
+                            "could not save response body: " ~ exception.msg);
+                    return 1;
+                }
+            }
+            if (options.json)
+            {
+                import ripnet.output : httpResponse;
+
+                writeln(httpResponse(response));
+            }
+            else if (response.transportSuccess)
+            {
+                writefln("HTTP %d (%.2f ms; connect %.2f ms; first byte %.2f ms)",
+                        response.statusCode, response.totalMs,
+                        response.connectMs, response.firstByteMs);
+                foreach (header; response.headers)
+                    writeln(header);
+                if (!options.httpOutputFile.length && response.body.length)
+                {
+                    import std.stdio : write;
+
+                    writeln();
+                    write(cast(const(char)[]) response.body);
+                }
+            }
+            else
+                printCommandError(options.command, response.error);
+            return response.transportSuccess ? 0 : 1;
+        }
+    case Command.httpBulk:
+        {
+            httpBulkModule.BulkOptions batch;
+            batch.request = makeHttpRequest(options);
+            batch.authorizedHost = options.httpAuthorizedHost;
+            batch.requestCount = options.count;
+            batch.concurrency = options.concurrency;
+            batch.maxRequestsPerSecond = options.httpMaxRps;
+            batch.dryRun = options.httpDryRun;
+            auto result = httpBulkModule.execute(batch);
+            if (result.error.length)
+            {
+                printCommandError(options.command, result.error);
+                return 2;
+            }
+            if (options.json)
+            {
+                import ripnet.output : httpBulk;
+
+                writeln(httpBulk(result));
+            }
+            else if (result.dryRun)
+                writefln("dry run: %d requests to %s, concurrency %d, maximum %d requests/second",
+                        options.count, options.host, options.concurrency, options.httpMaxRps);
+            else
+                writefln("requests: %d total, %d successful, %d failed; %.2f ms",
+                        result.responses.length, result.succeeded,
+                        result.failed, result.elapsedMs);
+            return result.failed ? 1 : 0;
+        }
     case Command.securityHttp:
-        return printProbe(options.command,
-                securityModule.http(options.host, options.port ? options.port : 80), options.json);
+        {
+            httpClient.HttpRequest request;
+            request.url = httpUrl(options.host, options.port ? options.port : 80, false);
+            request.method = "HEAD";
+            auto response = httpClient.perform(request);
+            if (options.json)
+            {
+                import ripnet.output : httpResponse;
+
+                writeln(httpResponse(response));
+            }
+            else if (response.transportSuccess)
+                writefln("HTTP %d (%.2f ms)", response.statusCode, response.totalMs);
+            else
+                printCommandError(options.command, response.error);
+            return response.transportSuccess ? 0 : 1;
+        }
     case Command.securitySsl:
         return printProbe(options.command,
                 securityModule.ssl(options.host, options.port ? options.port : 443), options.json);
@@ -296,17 +417,20 @@ int main(string[] args)
     case Command.securityDns:
         return securityModule.audit(options.host);
     case Command.tcpStress:
-    case Command.httpStress:
         auto stressResult = stressModule.tcp(options.host,
                 options.port, options.durationSec, options.concurrency);
         writefln("connections: %d successful, %d failed",
                 stressResult.successfulConnections, stressResult.failedConnections);
         return 0;
+    case Command.httpStress:
+        printCommandError(options.command,
+                "HTTP load testing requires explicit host authorization; use http-bulk with --allow-host");
+        return 1;
     case Command.packetFlood:
     case Command.pingFlood:
         printCommandError(options.command,
                 "flood operations require an explicit privileged implementation");
-        return -1;
+        return 1;
     case Command.traceroute:
     case Command.tracerouteTcp:
     case Command.tracerouteUdp:
@@ -317,10 +441,11 @@ int main(string[] args)
                 options.filter, options.packetCount, options.promisc);
     case Command.portKnocking:
         printCommandError(options.command, "operation is not available");
-        return -1;
+        return 1;
     case Command.ddos:
-        writeln("ripnet: that's very minimalist of you.");
-        return 0;
+        printCommandError(options.command,
+                "unrestricted denial-of-service functionality is intentionally unsupported");
+        return 1;
     case Command.help:
     case Command.showVersion:
         return 0;
@@ -387,6 +512,8 @@ private bool requiresTarget(CliOptions options)
     case Command.securitySsh:
     case Command.sftp:
     case Command.securityHttp:
+    case Command.httpRequest:
+    case Command.httpBulk:
     case Command.securitySsl:
     case Command.securitySmtp:
     case Command.securityBanner:
@@ -403,11 +530,48 @@ private bool requiresTarget(CliOptions options)
     }
 }
 
+private httpClient.HttpRequest makeHttpRequest(CliOptions options)
+{
+    httpClient.HttpRequest request;
+    request.url = options.host;
+    request.method = options.httpMethod;
+    request.headers = options.httpHeaders;
+    request.query = options.httpQuery;
+    request.body = options.httpBody;
+    request.bodyFile = options.httpBodyFile;
+    request.contentType = options.httpContentType;
+    request.formFields = options.httpForm;
+    request.jsonBody = options.httpJsonBody;
+    request.bearerToken = options.httpBearerToken;
+    request.basicAuth = options.httpBasicAuth;
+    request.cookie = options.httpCookie;
+    request.proxy = options.httpProxy;
+    request.timeoutMs = options.timeoutMs;
+    request.maxRedirects = options.httpMaxRedirects;
+    request.maxResponseBytes = options.httpMaxResponseBytes;
+    request.followRedirects = options.httpFollowRedirects;
+    request.allowTrace = options.httpAllowTrace;
+    request.insecureTls = options.httpInsecureTls;
+    return request;
+}
+
+private string httpUrl(string host, ushort port, bool tls)
+{
+    import std.conv : to;
+    import std.string : indexOf, startsWith;
+
+    auto hostValue = host;
+    if (host.indexOf(':') >= 0 && !host.startsWith("["))
+        hostValue = "[" ~ host ~ "]";
+    return (tls ? "https://" : "http://") ~ hostValue ~ ":" ~ to!string(port) ~ "/";
+}
+
 private int printProbe(Command command, PingResult result, bool json = false)
 {
     if (json)
     {
         import ripnet.output : ping;
+
         writeln(ping(result));
         return result.success ? 0 : -1;
     }
@@ -423,6 +587,7 @@ private int printDns(Command command, DnsResult result, bool json = false)
     if (json)
     {
         import ripnet.output : dns;
+
         writeln(dns(result));
         return result.success ? 0 : -1;
     }
@@ -441,6 +606,7 @@ private int printScan(ScanResult result, bool json = false)
     if (json)
     {
         import ripnet.output : scan;
+
         writeln(scan(result));
         return result.open ? 0 : -1;
     }
@@ -453,6 +619,7 @@ private int printScans(ScanResult[] results, bool json = false)
     if (json)
     {
         import ripnet.output : scans;
+
         writeln(scans(results));
         return 0;
     }
