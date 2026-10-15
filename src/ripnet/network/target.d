@@ -4,6 +4,59 @@ import std.algorithm : all;
 import std.conv : to;
 import std.string : split, indexOf;
 
+public enum uint maxIpv4NetworkHosts = 4096;
+
+public bool parseIpv4Cidr(string network, out uint address, out uint prefix)
+{
+    auto parts = network.split('/');
+    if (parts.length != 2)
+        return false;
+
+    auto octets = parts[0].split('.');
+    if (octets.length != 4)
+        return false;
+
+    uint parsedAddress;
+    foreach (octet; octets)
+    {
+        if (octet.length == 0 || octet.length > 3)
+            return false;
+        foreach (character; octet)
+            if (character < '0' || character > '9')
+                return false;
+        auto value = to!uint(octet);
+        if (value > 255)
+            return false;
+        parsedAddress = (parsedAddress << 8) | value;
+    }
+
+    if (parts[1].length == 0 || parts[1].length > 2)
+        return false;
+    foreach (character; parts[1])
+        if (character < '0' || character > '9')
+            return false;
+    auto parsedPrefix = to!uint(parts[1]);
+    if (parsedPrefix > 32)
+        return false;
+
+    address = parsedAddress;
+    prefix = parsedPrefix;
+    return true;
+}
+
+public string ipv4CidrError(string network, uint maxHosts = maxIpv4NetworkHosts)
+{
+    uint address;
+    uint prefix;
+    if (!parseIpv4Cidr(network, address, prefix))
+        return "invalid IPv4 CIDR network: '" ~ network ~ "'";
+
+    auto addressCount = 1UL << (32 - prefix);
+    if (addressCount > maxHosts)
+        return "network contains more than " ~ to!string(maxHosts) ~ " addresses";
+    return "";
+}
+
 public bool isAddressLike(string target)
 {
     if (target.length == 0 || target.length > 253)
