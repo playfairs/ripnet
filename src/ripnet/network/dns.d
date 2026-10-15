@@ -3,11 +3,96 @@ module ripnet.network.dns;
 import ripnet.model;
 import ripnet.network.target : invalidTargetMessage, isAddressLike;
 import ripnet.platform.command : CommandResult, run;
+import core.time : MonoTime, dur;
 import std.datetime.stopwatch : StopWatch, AutoStart;
 import std.socket : Address, getAddress;
-import std.string : splitLines, strip, split;
+import std.string : splitLines, strip, split, toLower;
 import std.array : join;
 import std.stdio : writeln;
+
+private enum size_t maxCachedLookups = 4096;
+private __gshared Object dnsCacheLock;
+private __gshared DnsCacheEntry[string] dnsCache;
+
+private struct DnsCacheEntry
+{
+    DnsResult result;
+    MonoTime expiresAt;
+}
+
+shared static this()
+{
+    dnsCacheLock = new Object;
+}
+
+private string normalizedCacheKey(string hostname)
+{
+    auto key = hostname.toLower;
+    if (key.length > 1 && key[$ - 1] == '.')
+        key = key[0 .. $ - 1];
+    return key;
+}
+
+private bool getCachedResult(string key, MonoTime now, out DnsResult result)
+{
+    synchronized (dnsCacheLock)
+    {
+        if (auto entry = key in dnsCache)
+        {
+            if (now < entry.expiresAt)
+            {
+                result = entry.result;
+                return true;
+            }
+            dnsCache.remove(key);
+        }
+    }
+    return false;
+}
+
+private void storeCachedResult(string key, DnsResult result, MonoTime now)
+{
+    auto expiresAt = now + dur!"seconds"(60);
+    synchronized (dnsCacheLock)
+    {
+        string[] expiredKeys;
+        foreach (cachedKey, entry; dnsCache)
+            if (!(now < entry.expiresAt))
+                expiredKeys ~= cachedKey;
+        foreach (expiredKey; expiredKeys)
+            dnsCache.remove(expiredKey);
+
+        if (key !in dnsCache && dnsCache.length >= maxCachedLookups)
+        {
+            string oldestKey;
+            MonoTime oldestExpiry;
+            bool foundOldest;
+            foreach (cachedKey, entry; dnsCache)
+            {
+                if (!foundOldest || entry.expiresAt < oldestExpiry)
+                {
+                    oldestKey = cachedKey;
+                    oldestExpiry = entry.expiresAt;
+                    foundOldest = true;
+                }
+            }
+            if (foundOldest)
+                dnsCache.remove(oldestKey);
+        }
+
+        dnsCache[key] = DnsCacheEntry(result, expiresAt);
+    }
+}
+
+private size_t clearCachedResults()
+{
+    synchronized (dnsCacheLock)
+    {
+        auto count = dnsCache.length;
+        dnsCache = null;
+        return count;
+    }
+}
 
 public DnsResult lookup(string hostname)
 {
@@ -18,6 +103,14 @@ public DnsResult lookup(string hostname)
     {
         result.error = invalidTargetMessage(hostname);
         return result;
+    }
+    auto key = normalizedCacheKey(hostname);
+    DnsResult cachedResult;
+    if (getCachedResult(key, MonoTime.currTime, cachedResult))
+    {
+        cachedResult.hostname = hostname;
+        cachedResult.responseTimeMs = watch.peek.total!"msecs";
+        return cachedResult;
     }
     try
     {
@@ -32,6 +125,8 @@ public DnsResult lookup(string hostname)
         result.success = false;
     }
     result.responseTimeMs = watch.peek.total!"msecs";
+    if (result.success)
+        storeCachedResult(key, result, MonoTime.currTime);
     return result;
 }
 
@@ -138,7 +233,65 @@ public int bruteForce(string domain, string wordlist)
 
 public int cacheFlush()
 {
-    version (linux)
+    import std.stdio : stderr, writefln, writeln;
+
+    auto clearedEntries = clearCachedResults();
+    version (OSX)
+    {
+        import core.sys.posix.unistd : geteuid;
+
+        if (geteuid() != 0)
+        {
+            stderr.writefln("dns-cache-flush: cleared %s ripnet entries; macOS flush requires root, run `sudo ripnet dns-cache-flush`",
+                    clearedEntries);
+            return 1;
+        }
+
+        auto flush = run("dscacheutil", ["-flushcache"]);
+        if (!flush.success)
+        {
+            stderr.writefln("dns-cache-flush: dscacheutil -flushcache failed (status %d)%s",
+                    flush.status, flush.error.length ? ": " ~ flush.error : "");
+            return 1;
+        }
+
+        auto restart = run("killall", ["-HUP", "mDNSResponder"]);
+        if (!restart.success)
+        {
+            stderr.writefln(
+                    "dns-cache-flush: dscacheutil succeeded, but killall -HUP mDNSResponder failed (status %d)%s",
+                    restart.status, restart.error.length ? ": " ~ restart.error : "");
+            return 1;
+        }
+
+        writeln("DNS cache flushed and mDNSResponder signaled; cleared ",
+                clearedEntries, " ripnet entries.");
         return 0;
-    return 0;
+    }
+    else
+    {
+        writefln("dns-cache-flush: cleared %s ripnet entries.", clearedEntries);
+        return 0;
+    }
+}
+
+unittest
+{
+    clearCachedResults();
+    auto now = MonoTime.currTime;
+    DnsResult result;
+    result.hostname = "Example.test";
+    result.addresses = ["192.0.2.20"];
+    result.success = true;
+    storeCachedResult(normalizedCacheKey("Example.test."), result, now);
+
+    DnsResult cached;
+    assert(getCachedResult(normalizedCacheKey("example.TEST"), now, cached));
+    assert(cached.addresses.length == 1);
+    assert(cached.addresses[0] == "192.0.2.20");
+    assert(!getCachedResult(normalizedCacheKey("example.test"), now + dur!"seconds"(61), cached));
+
+    storeCachedResult("another.test", result, now);
+    assert(clearCachedResults() == 1);
+    assert(!getCachedResult("another.test", now, cached));
 }
