@@ -42,6 +42,9 @@ to review the available options. Some operations require elevated privileges, li
 .TP
 .B Security and authorized stress testing
 .BR ssh , security-ssh , sftp , security-http , security-ssl , security-smtp , security-banner , security-dns , security-audit , security-scan , tcp-stress , http-stress , packet-flood , ping-flood , port-knocking
+.TP
+.B HTTP
+.BR http-request , http-bulk
 .SH OPTIONS
 .TP
 .BR -h , --help
@@ -58,6 +61,16 @@ Set the target host.
 .TP
 .BR -n\ CIDR , --network\ CIDR
 Set the target network.
+.PP
+.B network-scan
+accepts IPv4 CIDR targets containing at most 4096 addresses. Network and
+broadcast addresses are excluded for prefixes through /30; /31 and /32
+addresses are included. Without --port, the command only enumerates target
+addresses are included. The command requires --port and attempts TCP
+connections; an unsuccessful connection does not prove that a host is offline.
+.B ping-sweep
+uses ICMP echo and reports only hosts that respond. Missing responses are not
+proof that a host is offline.
 .TP
 .BR -p\ N , --port\ N
 Set a target port.
@@ -134,6 +147,8 @@ Request promiscuous packet capture.
 .nf
 ripnet list-interfaces
 ripnet ping example.com --count 5
+ripnet http-request https://example.test/ --json
+ripnet http-bulk https://example.test/health --allow-host example.test --count 5 --max-rps 2
 ripnet scan 192.0.2.10 --start-port 1 --end-port 1024
 ripnet dns-query example.com --record-type MX
 ripnet service-scan 192.0.2.10 --port 22
@@ -142,6 +157,34 @@ ripnet ssh git@github.com --identity ~/.ssh/id_ed25519
 ripnet ssh admin@example.com -L 8080:localhost:80
 ripnet sftp deploy@example.com /var/www --identity ~/.ssh/id_ed25519
 .fi
+.SH IMPLEMENTATION LIMITS
+.B http-request
+uses libcurl for HTTP/1.1 and negotiated HTTP/2 over TLS. TLS verification is
+enabled unless --insecure is explicitly supplied. Responses are limited to 16
+MiB per request and timeouts default to 1 second. JSON and URL-encoded form
+bodies are supported. The bulk command has hard limits of 1000 requests, 8
+concurrent workers, 10 requests per second, 16 MiB aggregate request and
+response bodies, and 120 seconds of scheduled duration. It requires --allow-host to exactly
+match the URL host and does not follow redirects. Continuous-duration and ramp
+testing, persistent connection reuse, and request-definition files are not
+implemented. The legacy http-stress command is unavailable.
+.PP
+.B monitor-start
+and
+.B monitor-stop
+are not implemented. The monitor status command performs a one-shot
+measurement. The
+.B dns-cache-flush
+clears ripnet's in-process DNS lookup cache on every platform. On macOS it also flushes
+the system resolver by running dscacheutil -flushcache and signaling
+mDNSResponder; this requires root, so run it as
+.B sudo ripnet dns-cache-flush.
+On other platforms it does not clear the system resolver cache. Successful
+dns-lookup results are cached in-process for up to 60 seconds, with a maximum
+of 4096 entries; failed lookups are not cached. The
+.B ddos
+command is intentionally unsupported; packet-flood and ping-flood operations
+are also unavailable.
 .SH EXIT STATUS
 .TP
 .B 0
