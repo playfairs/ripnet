@@ -11,5 +11,8 @@ pkgs.mkShell {
     ninja
     pkg-config
     libpcap
+    curl
+    python3
+    openssl
   ];
 }
