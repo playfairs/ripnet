@@ -1,0 +1,8 @@
+tasks:
+  test:
+    run: mkdir -p "{{build_dir}}/tests"
+    run: nox build "{{build_dir}}" -j2
+    run: ldc2 -Isrc -of="{{build_dir}}/tests/cli_test" tests/cli_test.d src/ripnet/app/cli.d src/ripnet/model.d && "{{build_dir}}/tests/cli_test"
+    run: ldc2 -Isrc -of="{{build_dir}}/tests/packet_test" tests/packet_test.d src/ripnet/network/packet.d src/ripnet/network/target.d src/ripnet/model.d && "{{build_dir}}/tests/packet_test"
+    run: ldc2 -unittest -Isrc -of="{{build_dir}}/tests/network_test" tests/network_test.d src/ripnet/model.d src/ripnet/network/scan.d src/ripnet/network/probe.d src/ripnet/network/target.d src/ripnet/platform/command.d src/ripnet/network/dns.d && "{{build_dir}}/tests/network_test"
+    run: python3 tests/http_integration.py "{{build_dir}}/debug/ripnet/ripnet"
