@@ -20,7 +20,10 @@ stdenv.mkDerivation {
     pkgs.pkg-config
   ];
 
-  buildInputs = [ pkgs.libpcap ];
+  buildInputs = [
+    pkgs.libpcap
+    pkgs.curl
+  ];
 
   configurePhase = "true";
 
