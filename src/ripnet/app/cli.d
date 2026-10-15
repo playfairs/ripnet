@@ -103,6 +103,8 @@ private Command[string] commands()
     result["ssh"] = Command.securitySsh;
     result["sftp"] = Command.sftp;
     result["security-http"] = Command.securityHttp;
+    result["http-request"] = Command.httpRequest;
+    result["http-bulk"] = Command.httpBulk;
     result["security-ssl"] = Command.securitySsl;
     result["security-smtp"] = Command.securitySmtp;
     result["security-banner"] = Command.securityBanner;
@@ -121,14 +123,17 @@ private Command[string] commands()
 private bool needsValue(string key)
 {
     return [
-        "interface", "filter", "host", "hostname", "user", "identity", "command",
-        "jump-host", "local-forward", "remote-forward", "dynamic-forward",
-        "proxy-command", "ssh-option", "remote-path",
-        "network", "domain",
-        "dns-server", "record-type", "wordlist", "ip", "mac", "protocol", "chain",
-        "rule", "log", "export", "process", "path", "port", "start-port",
-        "end-port", "count", "timeout", "concurrency", "duration", "interval",
-        "rate-limit", "max-bps", "download-bps", "upload-bps", "pid", "threshold"
+        "interface", "filter", "host", "hostname", "user", "identity",
+        "command", "jump-host", "local-forward", "remote-forward",
+        "dynamic-forward", "proxy-command", "ssh-option", "remote-path",
+        "method", "header", "query", "body", "body-file",
+        "content-type", "form", "bearer", "basic-auth", "cookie", "proxy",
+        "save-body", "max-redirects", "max-response", "allow-host", "max-rps",
+        "network", "domain", "dns-server", "record-type", "wordlist", "ip", "mac",
+        "protocol", "chain", "rule", "log", "export", "process", "path", "port",
+        "start-port", "end-port", "count", "timeout", "concurrency", "duration",
+        "interval", "rate-limit", "max-bps", "download-bps", "upload-bps", "pid",
+        "threshold"
     ].canFind(key);
 }
 
@@ -136,48 +141,90 @@ private string canonicalOption(string option)
 {
     switch (option)
     {
-    case "h": return "help";
-    case "v": return "version";
-    case "V": return "verbose";
-    case "j": return "json";
-    case "i": return "interface";
-    case "f": return "filter";
-    case "H": return "host";
-    case "N": return "hostname";
-    case "u": return "user";
-    case "A": return "agent-forwarding";
-    case "X": return "x11-forwarding";
-    case "T": return "no-tty";
-    case "J": return "jump-host";
-    case "n": return "network";
-    case "d": return "domain";
-    case "s": return "dns-server";
-    case "r": return "record-type";
-    case "w": return "wordlist";
-    case "I": return "ip";
-    case "m": return "mac";
-    case "P": return "protocol";
-    case "C": return "chain";
-    case "R": return "rule";
-    case "l": return "log";
-    case "e": return "export";
-    case "q": return "process";
-    case "x": return "path";
-    case "p": return "port";
-    case "sp": return "start-port";
-    case "ep": return "end-port";
-    case "c": return "count";
-    case "t": return "timeout";
-    case "k": return "concurrency";
-    case "du": return "duration";
-    case "int": return "interval";
-    case "rl": return "rate-limit";
-    case "mb": return "max-bps";
-    case "db": return "download-bps";
-    case "ub": return "upload-bps";
-    case "pid": return "pid";
-    case "th": return "threshold";
-    default: return option;
+    case "h":
+        return "help";
+    case "v":
+        return "version";
+    case "V":
+        return "verbose";
+    case "j":
+        return "json";
+    case "i":
+        return "interface";
+    case "f":
+        return "filter";
+    case "H":
+        return "host";
+    case "N":
+        return "hostname";
+    case "u":
+        return "user";
+    case "A":
+        return "agent-forwarding";
+    case "X":
+        return "x11-forwarding";
+    case "T":
+        return "no-tty";
+    case "J":
+        return "jump-host";
+    case "n":
+        return "network";
+    case "d":
+        return "domain";
+    case "s":
+        return "dns-server";
+    case "r":
+        return "record-type";
+    case "w":
+        return "wordlist";
+    case "I":
+        return "ip";
+    case "m":
+        return "mac";
+    case "P":
+        return "protocol";
+    case "C":
+        return "chain";
+    case "R":
+        return "rule";
+    case "l":
+        return "log";
+    case "e":
+        return "export";
+    case "q":
+        return "process";
+    case "x":
+        return "path";
+    case "p":
+        return "port";
+    case "sp":
+        return "start-port";
+    case "ep":
+        return "end-port";
+    case "c":
+        return "count";
+    case "t":
+        return "timeout";
+    case "k":
+        return "concurrency";
+    case "du":
+        return "duration";
+    case "int":
+        return "interval";
+    case "rl":
+        return "rate-limit";
+    case "mb":
+        return "max-bps";
+    case "db":
+        return "download-bps";
+    case "ub":
+        return "upload-bps";
+    case "pid":
+        return "pid";
+    case "th":
+        return "threshold";
+    default:
+        return option;
     }
 }
 
@@ -242,6 +289,31 @@ public ParseResult parseArgs(string[] args)
             options.promisc = true;
             continue;
         }
+        if (option == "insecure")
+        {
+            options.httpInsecureTls = true;
+            continue;
+        }
+        if (option == "allow-trace")
+        {
+            options.httpAllowTrace = true;
+            continue;
+        }
+        if (option == "no-redirects")
+        {
+            options.httpFollowRedirects = false;
+            continue;
+        }
+        if (option == "dry-run")
+        {
+            options.httpDryRun = true;
+            continue;
+        }
+        if (option == "json-body")
+        {
+            options.httpJsonBody = true;
+            continue;
+        }
         if (option == "agent-forwarding")
         {
             options.sshAgentForwarding = true;
@@ -270,15 +342,12 @@ public ParseResult parseArgs(string[] args)
     options.positional = positional;
     if (!options.host.length && positional.length)
         options.host = positional[0];
-    if ((options.command == Command.discoveryPing) && !options.network.length
-            && positional.length)
+    if ((options.command == Command.discoveryPing) && !options.network.length && positional.length)
         options.network = positional[0];
-    if ((options.command == Command.discoveryDns
-            || options.command == Command.dnsBruteforce)
+    if ((options.command == Command.discoveryDns || options.command == Command.dnsBruteforce)
             && !options.domain.length && positional.length)
         options.domain = positional[0];
-    if (options.command == Command.sftp && !options.sftpRemotePath
-            && positional.length > 1)
+    if (options.command == Command.sftp && !options.sftpRemotePath && positional.length > 1)
         options.sftpRemotePath = positional[1];
     if (!options.hostname.length)
         options.hostname = options.host;
@@ -375,6 +444,54 @@ private string assign(ref CliOptions options, string key, string value)
         case "path":
             options.httpPath = value;
             break;
+        case "method":
+            options.httpMethod = value;
+            break;
+        case "header":
+            options.httpHeaders ~= value;
+            break;
+        case "query":
+            options.httpQuery ~= value;
+            break;
+        case "body":
+            options.httpBody = value;
+            break;
+        case "body-file":
+            options.httpBodyFile = value;
+            break;
+        case "content-type":
+            options.httpContentType = value;
+            break;
+        case "form":
+            options.httpForm ~= value;
+            break;
+        case "bearer":
+            options.httpBearerToken = value;
+            break;
+        case "basic-auth":
+            options.httpBasicAuth = value;
+            break;
+        case "cookie":
+            options.httpCookie = value;
+            break;
+        case "proxy":
+            options.httpProxy = value;
+            break;
+        case "save-body":
+            options.httpOutputFile = value;
+            break;
+        case "max-redirects":
+            options.httpMaxRedirects = to!uint(value);
+            break;
+        case "max-response":
+            options.httpMaxResponseBytes = to!uint(value);
+            break;
+        case "allow-host":
+            options.httpAuthorizedHost = value;
+            break;
+        case "max-rps":
+            options.httpMaxRps = to!uint(value);
+            break;
         case "port":
             options.port = to!ushort(value);
             break;
@@ -456,6 +573,7 @@ public void printUsage()
     writeln("    bandwidth-history, bandwidth-limit, bandwidth-shaper, monitor-start,");
     writeln("    monitor-stop, monitor-status, monitor-alert, monitor-log, monitor-export");
     writeln("  Remote access: ssh, security-ssh, sftp");
+    writeln("  HTTP: http-request, http-bulk");
     writeln("  Security: security-http, security-ssl, security-smtp,");
     writeln("    security-banner, security-dns, security-audit, security-scan");
     writeln("  Authorized stress testing: tcp-stress, http-stress, packet-flood,");
@@ -540,9 +658,11 @@ public void printCommandUsage(Command command)
     case Command.capture:
         usage ~= " --interface NAME [--filter EXPRESSION] [--promisc]";
         description = "capture packets with libpcap";
-        flags = ["--interface NAME, -i NAME  select an interface",
+        flags = [
+            "--interface NAME, -i NAME  select an interface",
             "--filter EXPRESSION, -f EXPRESSION",
-            "--promisc, -promisc        request promiscuous capture"];
+            "--promisc, -promisc        request promiscuous capture"
+        ];
         break;
     case Command.ping:
     case Command.pingTcp:
@@ -554,19 +674,32 @@ public void printCommandUsage(Command command)
     case Command.pingUdp:
         usage ~= " HOST [--port N] [--timeout MS]";
         description = "send a UDP reachability probe";
-        flags = ["--port N, -p N            target port (default: 53)",
-            "--timeout MS, -t MS        timeout per probe"];
+        flags = [
+            "--port N, -p N            target port (default: 53)",
+            "--timeout MS, -t MS        timeout per probe"
+        ];
         example ~= " example.com --port 53";
         break;
     case Command.pingSweep:
+        usage ~= " NETWORK [--timeout MS] [--json]";
+        description = "discover IPv4 targets with ICMP echo (maximum 4096 addresses)";
+        flags = [
+            "--network CIDR, -n CIDR   target IPv4 network (maximum 4096 addresses)",
+            "--timeout MS, -t MS        timeout per probe",
+            "--json, -j                 emit machine-readable output"
+        ];
+        example ~= " 127.0.0.0/30 --timeout 500";
+        break;
     case Command.networkScan:
-        usage ~= " NETWORK [--port N] [--timeout MS] [--json]";
-        description = "scan hosts in a network range";
-        flags = ["--network CIDR, -n CIDR   target network",
+        usage ~= " NETWORK --port N [--timeout MS] [--json]";
+        description = "test a TCP port on IPv4 targets (maximum 4096 addresses)";
+        flags = [
+            "--network CIDR, -n CIDR   target IPv4 network (maximum 4096 addresses)",
             "--port N, -p N            target port",
             "--timeout MS, -t MS        scan timeout",
-            "--json, -j                 emit machine-readable output"];
-        example ~= " 192.0.2.0/30 --timeout 500";
+            "--json, -j                 emit machine-readable output"
+        ];
+        example ~= " 192.0.2.0/30 --port 443 --timeout 500";
         break;
     case Command.scan:
     case Command.portScan:
@@ -577,18 +710,22 @@ public void printCommandUsage(Command command)
     case Command.nullScan:
         usage ~= " HOST [--start-port N] [--end-port N] [--timeout MS] [--verbose]";
         description = "scan a port range on a host";
-        flags = ["--start-port N, -sp N      first port (default: 1)",
+        flags = [
+            "--start-port N, -sp N      first port (default: 1)",
             "--end-port N, -ep N        last port (default: 1024)",
             "--timeout MS, -t MS        scan timeout",
             "--verbose, -V              show additional diagnostics",
-            "--json, -j                 emit machine-readable output"];
+            "--json, -j                 emit machine-readable output"
+        ];
         example ~= " 192.0.2.10 --start-port 1 --end-port 1024";
         break;
     case Command.serviceScan:
         usage ~= " HOST [--port N] [--timeout MS]";
         description = "identify an open service";
-        flags = ["--port N, -p N            target port",
-            "--timeout MS, -t MS        connection timeout"];
+        flags = [
+            "--port N, -p N            target port",
+            "--timeout MS, -t MS        connection timeout"
+        ];
         example ~= " 192.0.2.10 --port 22";
         break;
     case Command.dnsLookup:
@@ -605,8 +742,7 @@ public void printCommandUsage(Command command)
     case Command.dnsQuery:
         usage ~= " HOST [--record-type TYPE] [--dns-server HOST]";
         description = "query a DNS record";
-        flags = ["--record-type TYPE, -r TYPE",
-            "--dns-server HOST, -s HOST"];
+        flags = ["--record-type TYPE, -r TYPE", "--dns-server HOST, -s HOST"];
         example ~= " example.com --record-type MX";
         break;
     case Command.dnsServerTest:
@@ -618,12 +754,14 @@ public void printCommandUsage(Command command)
     case Command.dnsBruteforce:
         usage ~= " --domain NAME --wordlist FILE";
         description = "discover names with a wordlist";
-        flags = ["--domain NAME, -d NAME    target domain",
-            "--wordlist FILE, -w FILE  wordlist to use"];
+        flags = [
+            "--domain NAME, -d NAME    target domain",
+            "--wordlist FILE, -w FILE  wordlist to use"
+        ];
         example ~= " --domain example.com --wordlist names.txt";
         break;
     case Command.dnsCacheFlush:
-        description = "flush the local DNS cache";
+        description = "clear ripnet DNS cache; macOS system flush requires root";
         break;
     case Command.traceroute:
     case Command.tracerouteTcp:
@@ -651,15 +789,19 @@ public void printCommandUsage(Command command)
     case Command.arpCacheAdd:
         usage ~= " --ip ADDRESS --mac ADDRESS --interface NAME";
         description = "add an ARP cache or reply entry";
-        flags = ["--ip ADDRESS, -I ADDRESS  IP address",
+        flags = [
+            "--ip ADDRESS, -I ADDRESS  IP address",
             "--mac ADDRESS, -m ADDRESS  MAC address",
-            "--interface NAME, -i NAME  interface name"];
+            "--interface NAME, -i NAME  interface name"
+        ];
         break;
     case Command.arpCacheDelete:
         usage ~= " --ip ADDRESS --interface NAME";
         description = "delete an ARP cache entry";
-        flags = ["--ip ADDRESS, -I ADDRESS  IP address",
-            "--interface NAME, -i NAME  interface name"];
+        flags = [
+            "--ip ADDRESS, -I ADDRESS  IP address",
+            "--interface NAME, -i NAME  interface name"
+        ];
         break;
     case Command.arpSpoofDetect:
         usage ~= " [--interface NAME]";
@@ -699,12 +841,13 @@ public void printCommandUsage(Command command)
     case Command.discoverySmb:
     case Command.discoveryHttp:
     case Command.discoverySsl:
-           description = "run a protocol discovery adapter";
+        description = "run a protocol discovery adapter";
         break;
     case Command.securitySsh:
         usage ~= " HOST [--user NAME] [--port N] [--identity FILE] [--command CMD]";
         description = "open an interactive SSH connection";
-        flags = ["--user NAME, -u NAME      remote SSH user",
+        flags = [
+            "--user NAME, -u NAME      remote SSH user",
             "--port N, -p N            SSH port (default: 22)",
             "--identity FILE           private key file",
             "--command CMD             run a remote command instead of a shell",
@@ -716,19 +859,66 @@ public void printCommandUsage(Command command)
             "--ssh-option OPTION        pass an OpenSSH -o option (repeatable)",
             "--agent-forwarding, -A     forward the SSH agent",
             "--x11-forwarding, -X       enable X11 forwarding",
-            "--no-tty, -T              disable pseudo-terminal allocation"];
+            "--no-tty, -T              disable pseudo-terminal allocation"
+        ];
         example ~= " admin@example.com --identity ~/.ssh/id_ed25519";
         break;
     case Command.sftp:
         usage ~= " HOST [REMOTE_PATH] [--user NAME] [--port N] [--identity FILE]";
         description = "open an interactive SFTP session";
-        flags = ["--user NAME, -u NAME      remote SFTP user",
+        flags = [
+            "--user NAME, -u NAME      remote SFTP user",
             "--port N, -p N            SFTP/SSH port (default: 22)",
             "--identity FILE           private key file",
             "--remote-path PATH        open a remote path",
             "--jump-host HOST, -J HOST use a jump host",
-            "--ssh-option OPTION        pass an OpenSSH -o option (repeatable)"];
+            "--ssh-option OPTION        pass an OpenSSH -o option (repeatable)"
+        ];
         example ~= " deploy@example.com /var/www --identity ~/.ssh/id_ed25519";
+        break;
+    case Command.httpRequest:
+        usage ~= " URL [--method METHOD] [--header NAME:VALUE] [--body TEXT] [--json]";
+        description = "send a bounded HTTP/HTTPS request with TLS verification";
+        flags = [
+            "--method METHOD             HTTP method (default: GET)",
+            "--header NAME:VALUE         request header (repeatable)",
+            "--query KEY=VALUE           URL query parameter (repeatable)",
+            "--body TEXT                 request body",
+            "--body-file FILE            read request body from a file",
+            "--json-body                 validate body as JSON and set Content-Type",
+            "--form KEY=VALUE            form field (repeatable)",
+            "--content-type TYPE         set request Content-Type",
+            "--bearer TOKEN              bearer authentication",
+            "--basic-auth USER:PASS      basic authentication",
+            "--cookie VALUE              request cookie",
+            "--proxy URL                 HTTP proxy",
+            "--timeout MS, -t MS         total and connect timeout",
+            "--max-redirects N           redirect limit (maximum: 10)",
+            "--no-redirects              do not follow redirects",
+            "--max-response BYTES        response limit (maximum: 16 MiB)",
+            "--save-body FILE            save raw response body",
+            "--insecure                  disable TLS verification (unsafe)",
+            "--allow-trace               explicitly permit TRACE",
+            "--json, -j                  emit machine-readable response"
+        ];
+        example ~= " https://example.test/ --header 'Accept: application/json'";
+        break;
+    case Command.httpBulk:
+        usage ~= " URL --allow-host HOST [--count N] [--concurrency N] [--max-rps N]";
+        description = "run a finite, scope-checked HTTP request batch";
+        flags = [
+            "--allow-host HOST           must exactly match URL host (required)",
+            "--count N, -c N             total requests (maximum: 1000)",
+            "--concurrency N, -k N       workers (maximum: 8)",
+            "--max-rps N                 request rate (maximum: 10)",
+            "--dry-run                   validate and display plan without requests",
+            "--method METHOD             HTTP method (default: GET)",
+            "--header NAME:VALUE         request header (repeatable)",
+            "--body TEXT                 request body",
+            "--timeout MS, -t MS         per-request timeout",
+            "--json, -j                  emit machine-readable results"
+        ];
+        example ~= " https://example.test/ --allow-host example.test --count 5 --max-rps 2";
         break;
     case Command.securityHttp:
     case Command.securitySsl:
@@ -782,14 +972,18 @@ public void printCommandUsage(Command command)
     case Command.firewallAdd:
         usage ~= " --chain NAME --rule RULE";
         description = "add a firewall rule";
-        flags = ["--chain NAME, -C NAME     firewall chain",
-            "--rule RULE, -R RULE       rule definition"];
+        flags = [
+            "--chain NAME, -C NAME     firewall chain",
+            "--rule RULE, -R RULE       rule definition"
+        ];
         break;
     case Command.firewallDelete:
         usage ~= " --chain NAME --port N";
         description = "delete a firewall rule by port";
-        flags = ["--chain NAME, -C NAME     firewall chain",
-            "--port N, -p N            target port"];
+        flags = [
+            "--chain NAME, -C NAME     firewall chain",
+            "--port N, -p N            target port"
+        ];
         break;
     case Command.firewallFlush:
         usage ~= " [--chain NAME]";
@@ -806,15 +1000,19 @@ public void printCommandUsage(Command command)
     case Command.unblockPort:
         usage ~= " --port N [--protocol NAME]";
         description = "add or remove a port firewall block";
-        flags = ["--port N, -p N            target port",
-            "--protocol NAME, -P NAME   transport protocol"];
+        flags = [
+            "--port N, -p N            target port",
+            "--protocol NAME, -P NAME   transport protocol"
+        ];
         break;
     case Command.bandwidthTest:
     case Command.bandwidthMonitor:
         usage ~= " [--interface NAME] [--interval SEC]";
         description = "measure network bandwidth";
-        flags = ["--interface NAME, -i NAME  select an interface",
-            "--interval SEC, -int SEC   sampling interval"];
+        flags = [
+            "--interface NAME, -i NAME  select an interface",
+            "--interval SEC, -int SEC   sampling interval"
+        ];
         break;
     case Command.bandwidthSpeedtest:
     case Command.bandwidthHistory:
@@ -824,11 +1022,11 @@ public void printCommandUsage(Command command)
         break;
     case Command.monitorStart:
         usage ~= " --interface NAME";
-        description = "start or stop interface monitoring";
+        description = "unavailable: continuous monitoring is not implemented";
         flags = ["--interface NAME, -i NAME  select an interface"];
         break;
     case Command.monitorStop:
-        description = "stop interface monitoring";
+        description = "unavailable: no background monitor is implemented";
         break;
     case Command.monitorStatus:
         usage ~= " [--interface NAME]";
@@ -838,29 +1036,39 @@ public void printCommandUsage(Command command)
     case Command.monitorAlert:
         usage ~= " --interface NAME --threshold N";
         description = "monitor an interface threshold";
-        flags = ["--interface NAME, -i NAME  select an interface",
-            "--threshold N, -th N       alert threshold"];
+        flags = [
+            "--interface NAME, -i NAME  select an interface",
+            "--threshold N, -th N       alert threshold"
+        ];
         break;
     case Command.monitorLog:
         usage ~= " --interface NAME --log FILE";
         description = "export monitor statistics to a log file";
-        flags = ["--interface NAME, -i NAME  select an interface",
-            "--log FILE, -l FILE        output log path"];
+        flags = [
+            "--interface NAME, -i NAME  select an interface",
+            "--log FILE, -l FILE        output log path"
+        ];
         break;
     case Command.monitorExport:
         usage ~= " --interface NAME --export FILE";
         description = "export monitor statistics";
-        flags = ["--interface NAME, -i NAME  select an interface",
-            "--export FILE, -e FILE     output path"];
+        flags = [
+            "--interface NAME, -i NAME  select an interface",
+            "--export FILE, -e FILE     output path"
+        ];
         break;
     case Command.tcpStress:
-    case Command.httpStress:
         usage ~= " HOST --port N [--duration SEC] [--concurrency N]";
-        description = "run an authorized connection stress test";
-        flags = ["--port N, -p N            target port",
+        description = "run a bounded TCP connection test";
+        flags = [
+            "--port N, -p N            target port",
             "--duration SEC, -du SEC    test duration",
-            "--concurrency N, -k N      concurrent connections"];
+            "--concurrency N, -k N      concurrent connections"
+        ];
         example ~= " example.com --port 443 --duration 10";
+        break;
+    case Command.httpStress:
+        description = "unavailable: use scoped finite http-bulk with --allow-host";
         break;
     case Command.packetFlood:
     case Command.pingFlood:
@@ -874,7 +1082,7 @@ public void printCommandUsage(Command command)
         example ~= " 192.0.2.10";
         break;
     case Command.ddos:
-        description = "show the controlled testing placeholder";
+        description = "unavailable: unrestricted denial-of-service functionality is unsupported";
         break;
     default:
         description = "no command-specific options";
