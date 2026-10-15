@@ -56,7 +56,11 @@
               nox.packages.${system}.default
               pkgs.pkg-config
               pkgs.libpcap
-            ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+              pkgs.curl
+              pkgs.python3
+              pkgs.openssl
+            ]
+            ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
               pkgs.valgrind
             ];
           };
