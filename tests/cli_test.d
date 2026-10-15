@@ -9,8 +9,10 @@ private void assertOk(ParseResult result)
 
 int main()
 {
-    auto scan = parseArgs(["ripnet", "scan", "example.com", "--start-port", "10",
-        "--end-port=20", "--json", "-V"]);
+    auto scan = parseArgs([
+        "ripnet", "scan", "example.com", "--start-port", "10", "--end-port=20",
+        "--json", "-V"
+    ]);
     assertOk(scan);
     assert(scan.options.command == Command.scan);
     assert(scan.options.host == "example.com");
@@ -19,8 +21,10 @@ int main()
     assert(scan.options.json);
     assert(scan.options.verbose);
 
-    auto ssh = parseArgs(["ripnet", "ssh", "admin@example.com", "-p", "2222",
-        "--ssh-option", "StrictHostKeyChecking=no", "--ssh-option=BatchMode=yes"]);
+    auto ssh = parseArgs([
+        "ripnet", "ssh", "admin@example.com", "-p", "2222", "--ssh-option",
+        "StrictHostKeyChecking=no", "--ssh-option=BatchMode=yes"
+    ]);
     assertOk(ssh);
     assert(ssh.options.command == Command.securitySsh);
     assert(ssh.options.port == 2222);
@@ -43,5 +47,34 @@ int main()
     auto unknown = parseArgs(["ripnet", "scan", "host", "--wat"]);
     assert(!unknown.ok);
     assert(unknown.error.canFind("unknown option"));
+
+    auto http = parseArgs([
+        "ripnet", "http-request", "https://example.test/api", "--method", "PATCH",
+        "--header", "X-Test: one", "--header=Accept: application/json", "--query",
+        "q=two words", "--body-file", "payload.json", "--insecure", "--json"
+    ]);
+    assertOk(http);
+    assert(http.options.command == Command.httpRequest);
+    assert(http.options.host == "https://example.test/api");
+    assert(http.options.httpMethod == "PATCH");
+    assert(http.options.httpHeaders.length == 2);
+    assert(http.options.httpQuery.length == 1);
+    assert(http.options.httpBodyFile == "payload.json");
+    assert(http.options.httpInsecureTls);
+    assert(http.options.json);
+
+    auto httpForm = parseArgs([
+        "ripnet", "http-request", "https://example.test/api", "--method",
+        "POST", "--form", "name=alice", "--form=city=Rome", "--json-body"
+    ]);
+    assertOk(httpForm);
+    assert(httpForm.options.httpForm.length == 2);
+    assert(httpForm.options.httpJsonBody);
+
+    auto httpUnknown = parseArgs([
+        "ripnet", "http-request", "https://example.test", "--wat"
+    ]);
+    assert(!httpUnknown.ok);
+    assert(httpUnknown.error.canFind("unknown option"));
     return 0;
 }
