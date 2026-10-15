@@ -3,6 +3,7 @@ module ripnet.network.scan;
 import ripnet.model;
 import ripnet.platform.command : run;
 import ripnet.network.probe;
+import ripnet.network.target : ipv4CidrError, parseIpv4Cidr;
 import std.algorithm : map;
 import std.array : array;
 import std.conv : to;
@@ -77,23 +78,22 @@ private string knownService(ushort port)
 
 public ScanResult[] networkScan(string network, ushort port = 0, uint timeoutMs = 1000)
 {
-    auto parts = network.split('/');
-    if (parts.length != 2)
-        return [];
-    auto octets = parts[0].split('.');
-    if (octets.length != 4)
+    if (ipv4CidrError(network).length)
         return [];
     uint address;
-    foreach (octet; octets)
-        address = (address << 8) | to!uint(octet);
-    auto prefix = to!uint(parts[1]);
-    if (prefix > 30)
+    uint prefix;
+    if (!parseIpv4Cidr(network, address, prefix))
         return [];
-    uint hostCount = 1u << (32 - prefix);
+
+    auto mask = prefix == 0 ? 0u : uint.max << (32 - prefix);
+    address &= mask;
+    auto addressCount = 1UL << (32 - prefix);
+    auto firstOffset = prefix >= 31 ? 0UL : 1UL;
+    auto endOffset = prefix >= 31 ? addressCount : addressCount - 1;
     ScanResult[] results;
-    foreach (offset; 1 .. hostCount - 1)
+    foreach (offset; firstOffset .. endOffset)
     {
-        auto host = formatAddress(address + offset);
+        auto host = formatAddress(cast(uint)(address + offset));
         if (port)
             results ~= scanPort(host, port, timeoutMs);
         else
