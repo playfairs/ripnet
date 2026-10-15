@@ -91,6 +91,8 @@ public enum Command
     monitorExport,
     securitySsh,
     sftp,
+    httpRequest,
+    httpBulk,
     securityHttp,
     securitySsl,
     securitySmtp,
@@ -158,6 +160,27 @@ public struct CliOptions
     string exportPath;
     string processFilter;
     string httpPath = "/";
+    string httpMethod = "GET";
+    string httpBody;
+    string httpBodyFile;
+    string httpContentType;
+    string[] httpForm;
+    string httpBearerToken;
+    string httpBasicAuth;
+    string httpCookie;
+    string httpProxy;
+    string httpOutputFile;
+    string httpAuthorizedHost;
+    string[] httpHeaders;
+    string[] httpQuery;
+    uint httpMaxRedirects = 5;
+    uint httpMaxResponseBytes = 1048576;
+    uint httpMaxRps = 1;
+    bool httpFollowRedirects = true;
+    bool httpAllowTrace;
+    bool httpInsecureTls;
+    bool httpDryRun;
+    bool httpJsonBody;
     ushort port;
     ushort startPort = 1;
     ushort endPort = 1024;
