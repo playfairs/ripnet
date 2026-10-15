@@ -8,13 +8,15 @@ project "ripnet" {
     version = file("./VERSION")
     license = file("./LICENSE")
     edition = "1"
-    dependencies = ["libpcap"]
+    dependencies = ["libpcap", "libcurl"]
     version_files = ["VERSION"]
 
     executable.d "ripnet" {
         sources = [
             "src/ripnet/app/cli.d",
             "src/ripnet/app/main.d",
+            "src/ripnet/http/client.d",
+            "src/ripnet/http/bulk.d",
             "src/ripnet/model.d",
             "src/ripnet/output.d",
             "src/ripnet/network/arp.d",
@@ -42,7 +44,7 @@ project "ripnet" {
             "src/ripnet/buildinfo.d",
         ]
         include_dirs = ["src"]
-        linker_flags = ["-lpcap"]
+        linker_flags = ["-lpcap", "-lcurl"]
         install = true
     }
 }
