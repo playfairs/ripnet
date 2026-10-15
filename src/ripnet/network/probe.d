@@ -18,6 +18,7 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
 {
     PingResult result;
     result.host = host;
+    result.latencyMs = 0;
     if (!isAddressLike(host))
     {
         result.error = invalidTargetMessage(host);
@@ -41,10 +42,10 @@ public PingResult tcpProbe(string host, ushort port, uint timeoutMs = 1000)
         socket.connect(addresses[0]);
         result.success = true;
         result.address = addresses[0].toString;
-        result.latencyMs = watch.peek.total!"msecs";
     }
     catch (Exception exception)
         result.error = exception.msg;
+    result.latencyMs = watch.peek.total!"msecs";
     return result;
 }
 
@@ -52,6 +53,7 @@ public PingResult udpProbe(string host, ushort port, uint timeoutMs = 1000)
 {
     PingResult result;
     result.host = host;
+    result.latencyMs = 0;
     if (!isAddressLike(host))
     {
         result.error = invalidTargetMessage(host);
@@ -76,10 +78,10 @@ public PingResult udpProbe(string host, ushort port, uint timeoutMs = 1000)
         socket.sendTo(payload, addresses[0]);
         result.success = true;
         result.address = addresses[0].toString;
-        result.latencyMs = watch.peek.total!"msecs";
     }
     catch (Exception exception)
         result.error = exception.msg;
+    result.latencyMs = watch.peek.total!"msecs";
     return result;
 }
 
